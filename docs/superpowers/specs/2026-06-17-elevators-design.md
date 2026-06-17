@@ -276,21 +276,27 @@ A single source of truth. If the SCSS is modified, JS picks it up on startup.
 
 ### 8.1. Semantics
 
-A single `.time-cell` per floor lives in a dedicated column between the shafts and the call buttons. Its content depends on the call's state, with two distinct semantics intentionally compressed into one display:
+Two distinct display surfaces per floor, chosen by whether the call is already assigned to an elevator or still queued:
 
-| Button state | What the time cell shows |
-|---|---|
-| `call` | empty |
-| `waiting` (or queued) | live counter of elapsed wait time since the user pressed Call (updated every 1000ms) |
-| `arrived` | the elevator's **trip duration** — `durationMs` measured by the Elevator with `performance.now()`. Frozen for the 2s rest. |
+| Call state | Where time renders | What time it shows |
+|---|---|---|
+| `call` | nowhere | empty |
+| `waiting`, already assigned to an elevator | `.time-cell` over the shafts area, positioned over the assigned shaft | live counter of elapsed wait time since the user pressed Call (updated every 1000ms) |
+| `waiting`, still in the queue (no elevator yet) | `.call-row__queue-time` next to the Call button, italic dimmer style | live counter of elapsed wait time |
+| `arrived` | `.time-cell` over the assigned shaft | the elevator's **trip duration** — `durationMs` measured by the Elevator with `performance.now()`. Frozen for the 2s rest. |
 
-This satisfies both the brief's literal requirement (*"Measure the time it took the elevator to reach the designated floor"* — shown on arrival) and the mockup (which shows live elapsed time on `waiting` rows).
+This satisfies both the brief's literal requirement (*"Measure the time it took the elevator to reach the designated floor"* — shown on arrival, in the time cell over the shaft) and the mockup (which shows live elapsed time on `waiting` rows). Splitting queued time off the shafts overlay avoids the "all queued times stack over the same shaft" visual bug.
 
 ### 8.2. Implementation
 
-A single global `setInterval(TIME_REFRESH_MS)` lives in the `Dispatcher` (id stored as `_tickerId`, cleared by `destroy()`). On each tick it iterates `activeCalls` and the `queue` and calls `button.setTime(formatTime(...))` for floors whose elevator is `moving` or whose call is still queued. Calls in `arrived` are not touched (they keep the trip duration written by `onArrival`).
+A single global `setInterval(TIME_REFRESH_MS)` lives in the `Dispatcher` (id stored as `_tickerId`, cleared by `destroy()`). On each tick it iterates `activeCalls` (assigned) and the `queue` (unassigned):
 
-The Dispatcher never accesses the time DOM element directly — it goes through `CallButton.setTime()`. The encapsulation of the CallButton's DOM is preserved.
+- For each assigned `waiting` call: `button.setTime(formatTime(now - startTime))` — writes to the shaft overlay cell.
+- For each queued call: `button.setQueueTime(formatTime(now - startTime))` — writes to the span next to the Call button.
+
+When a queued call is finally assigned (in `Dispatcher.onIdle`), `button.setElevatorIndex(elevator.id)` clears the queue-time span and the time "jumps" onto the assigned shaft cell.
+
+The Dispatcher never accesses the time DOM elements directly — it goes through `CallButton.setTime()` / `setQueueTime()`. The encapsulation of the CallButton's DOM is preserved.
 
 ### 8.3. Format
 
