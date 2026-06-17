@@ -7,6 +7,7 @@ export class Dispatcher {
     this.buttons = [];
     this.queue = [];
     this.activeCalls = new Map();
+    this.ding = new Audio('/ding.wav');
     this._startTicker();
   }
 
@@ -38,6 +39,8 @@ export class Dispatcher {
     if (!call) {
       throw new Error(`Dispatcher: arrival from elevator ${elevator.id} with no active call`);
     }
+    this.ding.currentTime = 0;
+    this.ding.play().catch(() => {});
     const elapsed = performance.now() - call.startTime;
     this.buttons[call.floor].setState('arrived', formatTime(elapsed));
     elevator.rest();
