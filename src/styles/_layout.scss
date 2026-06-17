@@ -1,0 +1,38 @@
+@use 'variables' as *;
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: $color-bg;
+  font-family: $font-stack;
+  font-size: 14px;
+  color: #222;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.building {
+  display: flex;
+  align-items: stretch;
+  background: #ffffff;
+  border: 1px solid $color-grid-line;
+  padding: 16px;
+}
+
+.building__labels,
+.building__shafts,
+.building__calls {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.building__labels { width: var(--label-width); }
+.building__shafts { display: flex; flex-direction: row; }
+.building__calls  { width: var(--calls-width); }

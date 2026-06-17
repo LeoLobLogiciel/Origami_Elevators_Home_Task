@@ -1,0 +1,23 @@
+:root {
+  --floor-height: 60px;
+  --shaft-width: 80px;
+  --label-width: 60px;
+  --calls-width: 160px;
+}
+
+$color-bg: #ebebeb;
+$color-grid-line: #d8d8d8;
+
+$color-call: #36c272;
+$color-call-text: #ffffff;
+$color-waiting: #ef4456;
+$color-waiting-text: #ffffff;
+$color-arrived-border: #36c272;
+$color-arrived-text: #36c272;
+$color-arrived-bg: #ffffff;
+
+$color-elevator-idle: #2d2d2d;
+$color-elevator-moving: #ef4456;
+$color-elevator-arrived: #36c272;
+
+$font-stack: 'Helvetica Neue', Arial, sans-serif;
