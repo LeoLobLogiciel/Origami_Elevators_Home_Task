@@ -3,7 +3,7 @@
 .shaft {
   position: relative;
   width: var(--shaft-width);
-  height: calc(var(--floor-height) * 10);
+  height: calc(var(--floor-height) * var(--floors, 10));
   border-left: 1px solid $color-grid-line;
   background-image: repeating-linear-gradient(
     to top,

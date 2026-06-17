@@ -45,6 +45,8 @@ export class Building {
   }
 
   _buildDom() {
+    this.root.style.setProperty('--floors', String(config.FLOORS));
+
     const labels = document.createElement('div'); labels.className = 'building__labels';
     const shaftsArea = document.createElement('div'); shaftsArea.className = 'building__shafts-area';
     const shafts = document.createElement('div'); shafts.className = 'building__shafts';
