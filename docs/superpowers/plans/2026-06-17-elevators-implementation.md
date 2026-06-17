@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implementar el sistema de elevadores descrito en `docs/superpowers/specs/2026-06-17-elevators-design.md` — V1 con 10 pisos, 5 elevadores, cola FIFO, movimiento suave y display de tiempo de espera.
+**Goal:** Implement the elevator system described in `docs/superpowers/specs/2026-06-17-elevators-design.md` — V1 with 10 floors, 5 elevators, FIFO queue, smooth movement, and wait-time display.
 
-**Architecture:** Vanilla JS con módulos ES. Cuatro clases (`Building`, `Dispatcher`, `Elevator`, `CallButton`) con acoplamiento directo por referencia. SCSS modular con BEM. Templates HTML5 + clonado para el markup. CSS transition para el movimiento. `performance.now()` para medir tiempo. `HTMLAudioElement` para el ding.
+**Architecture:** Vanilla JS with ES modules. Four classes (`Building`, `Dispatcher`, `Elevator`, `CallButton`) with direct coupling by reference. Modular SCSS with BEM. HTML5 templates + cloning for markup. CSS transition for movement. `performance.now()` for time measurement. `HTMLAudioElement` for the ding.
 
-**Tech Stack:** Vanilla JS (ES modules), SCSS, Vite (dev server + SCSS compiler), sin dependencias runtime.
+**Tech Stack:** Vanilla JS (ES modules), SCSS, Vite (dev server + SCSS compiler), no runtime dependencies.
 
-**Sobre tests:** el spec decide no incluir tests automatizados en V1 (decisión explícita §12 del spec). Cada task termina con un paso de **verificación manual** que reemplaza el ciclo TDD por un ciclo de validación visual/funcional en el browser. Esto es intencional, no un olvido.
+**On tests:** the spec decides not to include automated tests in V1 (explicit decision §12 of the spec). Each task ends with a **manual verification** step that replaces the TDD cycle with a visual/functional validation cycle in the browser. This is intentional, not an oversight.
 
 ---
 
@@ -19,17 +19,17 @@ elevators/
 ├── .gitignore
 ├── package.json
 ├── vite.config.js
-├── index.html              # markup raíz + <template> de elevator y call-row
+├── index.html              # root markup + <template>s for elevator and call-row
 ├── public/
-│   ├── elevator.svg        # placeholder en V1; usuario reemplaza con el del Drive
-│   └── ding.mp3            # placeholder en V1; usuario reemplaza con sonido real
+│   ├── elevator.svg        # placeholder in V1; user replaces with the Drive one
+│   └── ding.wav            # placeholder in V1; user replaces with real sound
 └── src/
-    ├── main.js             # entry point — instancia Building
+    ├── main.js             # entry point — instantiates Building
     ├── config.js           # FLOORS, ELEVATORS, FLOOR_DURATION_MS, REST_MS
     ├── Building.js         # bootstrap + wiring
-    ├── Dispatcher.js       # cola + algoritmo + setInterval de tiempo
-    ├── Elevator.js         # lifecycle + movimiento CSS
-    ├── CallButton.js       # UI del botón + setState
+    ├── Dispatcher.js       # queue + algorithm + time setInterval
+    ├── Elevator.js         # lifecycle + CSS movement
+    ├── CallButton.js       # button UI + setState
     ├── format.js           # formatTime(ms)
     └── styles/
         ├── main.scss
@@ -40,11 +40,11 @@ elevators/
         └── _button.scss
 ```
 
-11 tasks. Cada una produce código verificable independientemente. Commit al final de cada task.
+11 tasks. Each one produces independently verifiable code. Commit at the end of each task.
 
 ---
 
-## Task 1: Bootstrap del proyecto
+## Task 1: Project bootstrap
 
 **Files:**
 - Create: `.gitignore`
@@ -53,19 +53,19 @@ elevators/
 - Create: `index.html`
 - Create: `src/main.js`
 
-- [ ] **Step 1.1: Inicializar git**
+- [ ] **Step 1.1: Initialize git**
 
-Run en el working directory:
+Run in the working directory:
 ```bash
 git init
 git add docs/
 git commit -m "chore: include design spec"
 ```
-Expected: commit creado con el spec dentro.
+Expected: commit created with the spec inside.
 
-- [ ] **Step 1.2: Crear `.gitignore`**
+- [ ] **Step 1.2: Create `.gitignore`**
 
-Contenido completo:
+Full contents:
 ```
 node_modules/
 dist/
@@ -74,9 +74,9 @@ dist/
 .vite/
 ```
 
-- [ ] **Step 1.3: Crear `package.json`**
+- [ ] **Step 1.3: Create `package.json`**
 
-Contenido completo:
+Full contents:
 ```json
 {
   "name": "elevators",
@@ -95,9 +95,9 @@ Contenido completo:
 }
 ```
 
-- [ ] **Step 1.4: Crear `vite.config.js`**
+- [ ] **Step 1.4: Create `vite.config.js`**
 
-Contenido completo:
+Full contents:
 ```js
 import { defineConfig } from 'vite';
 
@@ -111,9 +111,9 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 1.5: Crear `index.html` con esqueleto mínimo**
+- [ ] **Step 1.5: Create `index.html` with minimal skeleton**
 
-Contenido completo:
+Full contents:
 ```html
 <!doctype html>
 <html lang="en">
@@ -131,21 +131,21 @@ Contenido completo:
 </html>
 ```
 
-- [ ] **Step 1.6: Crear `src/main.js` placeholder**
+- [ ] **Step 1.6: Create `src/main.js` placeholder**
 
-Contenido completo:
+Full contents:
 ```js
 console.log('Elevators boot');
 ```
 
-- [ ] **Step 1.7: Instalar dependencias y verificar**
+- [ ] **Step 1.7: Install dependencies and verify**
 
 Run:
 ```bash
 npm install
 npm run dev
 ```
-Expected: Vite arranca, browser abre `http://localhost:5173`, se ve "Elevator Exercise" como título y en consola "Elevators boot". Cortar el server con Ctrl+C.
+Expected: Vite starts, browser opens `http://localhost:5173`, "Elevator Exercise" shows as title and "Elevators boot" appears in the console. Stop the server with Ctrl+C.
 
 - [ ] **Step 1.8: Commit**
 
@@ -156,19 +156,19 @@ git commit -m "chore: bootstrap vite + module entry point"
 
 ---
 
-## Task 2: Config + SCSS base con variables y layout vacío
+## Task 2: Config + SCSS base with variables and empty layout
 
 **Files:**
 - Create: `src/config.js`
 - Create: `src/styles/main.scss`
 - Create: `src/styles/_variables.scss`
 - Create: `src/styles/_layout.scss`
-- Modify: `src/main.js` (importar el SCSS)
-- Modify: `index.html` (placeholder se ve)
+- Modify: `src/main.js` (import the SCSS)
+- Modify: `index.html` (placeholder shows)
 
-- [ ] **Step 2.1: Crear `src/config.js` con constantes**
+- [ ] **Step 2.1: Create `src/config.js` with constants**
 
-Contenido completo:
+Full contents:
 ```js
 export const FLOORS = 10;
 export const ELEVATORS = 5;
@@ -177,9 +177,9 @@ export const REST_MS = 2000;
 export const TIME_REFRESH_MS = 1000;
 ```
 
-- [ ] **Step 2.2: Crear `src/styles/_variables.scss`**
+- [ ] **Step 2.2: Create `src/styles/_variables.scss`**
 
-Contenido completo:
+Full contents:
 ```scss
 :root {
   --floor-height: 60px;
@@ -206,9 +206,9 @@ $color-elevator-arrived: #36c272;
 $font-stack: 'Helvetica Neue', Arial, sans-serif;
 ```
 
-- [ ] **Step 2.3: Crear `src/styles/_layout.scss`**
+- [ ] **Step 2.3: Create `src/styles/_layout.scss`**
 
-Contenido completo:
+Full contents:
 ```scss
 @use 'variables' as *;
 
@@ -250,56 +250,56 @@ body {
 .building__calls  { width: var(--calls-width); }
 ```
 
-Nota: `column-reverse` para labels y calls porque el piso 0 (Ground) va abajo y el 9° va arriba. Los datos los iteramos 0..9 pero visualmente quedan al revés.
+Note: `column-reverse` for labels and calls because floor 0 (Ground) goes at the bottom and floor 9 at the top. We iterate the data 0..9 but visually they end up reversed.
 
-- [ ] **Step 2.4: Crear `src/styles/main.scss` como entry**
+- [ ] **Step 2.4: Create `src/styles/main.scss` as entry**
 
-Contenido completo:
+Full contents:
 ```scss
 @use 'variables';
 @use 'layout';
 ```
 
-- [ ] **Step 2.5: Importar SCSS desde `src/main.js`**
+- [ ] **Step 2.5: Import SCSS from `src/main.js`**
 
-Reemplazar contenido completo de `src/main.js`:
+Replace full contents of `src/main.js`:
 ```js
 import './styles/main.scss';
 
 console.log('Elevators boot');
 ```
 
-- [ ] **Step 2.6: Verificación manual**
+- [ ] **Step 2.6: Manual verification**
 
 Run:
 ```bash
 npm run dev
 ```
 Expected:
-- La página se carga con fondo gris claro (`#ebebeb`).
-- El título "Elevator Exercise" se ve centrado.
-- No hay errores en consola.
+- The page loads with a light gray background (`#ebebeb`).
+- The "Elevator Exercise" title shows centered.
+- No errors in the console.
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 2.7: Commit**
 
 ```bash
 git add src/config.js src/styles/ src/main.js
-git commit -m "feat: scss base con variables y layout vacío"
+git commit -m "feat: scss base with variables and empty layout"
 ```
 
 ---
 
-## Task 3: `format.js` con helper de tiempo
+## Task 3: `format.js` with time helper
 
 **Files:**
 - Create: `src/format.js`
-- Modify: `src/main.js` (verificación rápida en consola)
+- Modify: `src/main.js` (quick console check)
 
-- [ ] **Step 3.1: Crear `src/format.js`**
+- [ ] **Step 3.1: Create `src/format.js`**
 
-Contenido completo:
+Full contents:
 ```js
 export function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
@@ -312,31 +312,31 @@ export function formatTime(ms) {
 }
 ```
 
-- [ ] **Step 3.2: Verificar en consola**
+- [ ] **Step 3.2: Verify in console**
 
-Reemplazar el contenido de `src/main.js` temporalmente:
+Temporarily replace the contents of `src/main.js`:
 ```js
 import './styles/main.scss';
 import { formatTime } from './format.js';
 
-console.log(formatTime(5000));     // esperado: "5 sec"
-console.log(formatTime(42500));    // esperado: "42 sec"
-console.log(formatTime(60000));    // esperado: "1 min. 0 sec."
-console.log(formatTime(90000));    // esperado: "1 min. 30 sec."
-console.log(formatTime(125400));   // esperado: "2 min. 5 sec."
+console.log(formatTime(5000));     // expected: "5 sec"
+console.log(formatTime(42500));    // expected: "42 sec"
+console.log(formatTime(60000));    // expected: "1 min. 0 sec."
+console.log(formatTime(90000));    // expected: "1 min. 30 sec."
+console.log(formatTime(125400));   // expected: "2 min. 5 sec."
 ```
 
 Run:
 ```bash
 npm run dev
 ```
-Expected: en la consola del browser aparecen los 5 valores como se indica arriba. Sin errores.
+Expected: the 5 values appear in the browser console as indicated above. No errors.
 
-Cortar el server.
+Stop the server.
 
-- [ ] **Step 3.3: Volver `src/main.js` a su estado base**
+- [ ] **Step 3.3: Restore `src/main.js` to its base state**
 
-Reemplazar contenido de `src/main.js`:
+Replace contents of `src/main.js`:
 ```js
 import './styles/main.scss';
 
@@ -352,9 +352,9 @@ git commit -m "feat: formatTime helper"
 
 ---
 
-## Task 4: Templates HTML + esqueleto del building renderizado (sin clases)
+## Task 4: HTML templates + skeleton rendered (no classes yet)
 
-Este task agrega los `<template>` y el código de clonado mínimo, sin clases todavía. El objetivo es ver el grid del building (10 filas × 5 columnas + labels + botones inertes) renderizado en pantalla.
+This task adds the `<template>` elements and minimal cloning code, no classes yet. The goal is to see the building grid (10 rows × 5 columns + labels + inert buttons) rendered on screen.
 
 **Files:**
 - Modify: `index.html`
@@ -364,7 +364,7 @@ Este task agrega los `<template>` y el código de clonado mínimo, sin clases to
 - Modify: `src/styles/main.scss`
 - Modify: `src/main.js`
 
-- [ ] **Step 4.1: Reemplazar contenido completo de `index.html`**
+- [ ] **Step 4.1: Replace full contents of `index.html`**
 
 ```html
 <!doctype html>
@@ -403,9 +403,9 @@ Este task agrega los `<template>` y el código de clonado mínimo, sin clases to
 </html>
 ```
 
-- [ ] **Step 4.2: Crear `src/styles/_floors.scss`**
+- [ ] **Step 4.2: Create `src/styles/_floors.scss`**
 
-Contenido completo:
+Full contents:
 ```scss
 @use 'variables' as *;
 
@@ -423,9 +423,9 @@ Contenido completo:
 }
 ```
 
-- [ ] **Step 4.3: Crear `src/styles/_elevator.scss`**
+- [ ] **Step 4.3: Create `src/styles/_elevator.scss`**
 
-Contenido completo:
+Full contents:
 ```scss
 @use 'variables' as *;
 
@@ -460,11 +460,11 @@ Contenido completo:
 .shaft__elevator--arrived .shaft__elevator-img { filter: brightness(0) drop-shadow(0 0 0 $color-elevator-arrived); }
 ```
 
-Nota: los `filter` son una forma rápida de tintar el SVG cuando se carga como `<img>`. Si el SVG provisto tiene fill propio, esto se ajusta en Task 11 (polish).
+Note: the `filter`s are a quick way to tint the SVG when loaded as `<img>`. If the provided SVG has its own fill, this is adjusted in Task 11 (polish).
 
-- [ ] **Step 4.4: Crear `src/styles/_button.scss`**
+- [ ] **Step 4.4: Create `src/styles/_button.scss`**
 
-Contenido completo:
+Full contents:
 ```scss
 @use 'variables' as *;
 
@@ -502,9 +502,9 @@ Contenido completo:
 .call-button--arrived { background: $color-arrived-bg; color: $color-arrived-text; border-color: $color-arrived-border; }
 ```
 
-- [ ] **Step 4.5: Actualizar `src/styles/main.scss`**
+- [ ] **Step 4.5: Update `src/styles/main.scss`**
 
-Reemplazar contenido completo:
+Replace full contents:
 ```scss
 @use 'variables';
 @use 'layout';
@@ -513,9 +513,9 @@ Reemplazar contenido completo:
 @use 'button';
 ```
 
-- [ ] **Step 4.6: Crear elevator.svg placeholder**
+- [ ] **Step 4.6: Create elevator.svg placeholder**
 
-Crear `public/elevator.svg` con contenido completo (cuadrado simple — vas a reemplazarlo con el del Drive después):
+Create `public/elevator.svg` with full contents (simple square — you'll replace it with the Drive one later):
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 52">
   <rect x="2" y="2" width="28" height="48" fill="currentColor" stroke="#000" stroke-width="2"/>
@@ -523,9 +523,9 @@ Crear `public/elevator.svg` con contenido completo (cuadrado simple — vas a re
 </svg>
 ```
 
-- [ ] **Step 4.7: Reemplazar `src/main.js` con clonado de templates**
+- [ ] **Step 4.7: Replace `src/main.js` with template cloning**
 
-Contenido completo:
+Full contents:
 ```js
 import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
@@ -582,40 +582,40 @@ function ordinalSuffix(n) {
 renderSkeleton('.building');
 ```
 
-- [ ] **Step 4.8: Verificación manual**
+- [ ] **Step 4.8: Manual verification**
 
 Run:
 ```bash
 npm run dev
 ```
 Expected:
-- Se ve un edificio centrado en la pantalla.
-- Columna izquierda: labels "9th, 8th, 7th, 6th, 5th, 4th, 3rd, 2nd, 1st, Ground" (de arriba a abajo).
-- Centro: 5 carriles verticales (shafts) con un cuadradito negro en la base de cada uno.
-- Columna derecha: 10 botones verdes que dicen "Call" alineados con los pisos.
-- Los clicks en los botones no hacen nada (no hay lógica aún).
-- No hay errores en consola.
+- A building shows centered on screen.
+- Left column: labels "9th, 8th, 7th, 6th, 5th, 4th, 3rd, 2nd, 1st, Ground" (top to bottom).
+- Center: 5 vertical shafts with a black square at the base of each.
+- Right column: 10 green buttons that say "Call" aligned with the floors.
+- Clicks on the buttons do nothing (no logic yet).
+- No errors in the console.
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 4.9: Commit**
 
 ```bash
 git add index.html src/main.js src/styles/ public/elevator.svg
-git commit -m "feat: render skeleton del building con templates"
+git commit -m "feat: render building skeleton with templates"
 ```
 
 ---
 
-## Task 5: Clase `CallButton`
+## Task 5: `CallButton` class
 
 **Files:**
 - Create: `src/CallButton.js`
-- Modify: `src/main.js` (instanciar y verificar manualmente)
+- Modify: `src/main.js` (instantiate and verify manually)
 
-- [ ] **Step 5.1: Crear `src/CallButton.js`**
+- [ ] **Step 5.1: Create `src/CallButton.js`**
 
-Contenido completo:
+Full contents:
 ```js
 const STATES = ['call', 'waiting', 'arrived'];
 
@@ -652,9 +652,9 @@ export class CallButton {
 }
 ```
 
-- [ ] **Step 5.2: Verificación manual con dispatcher fake**
+- [ ] **Step 5.2: Manual verification with fake dispatcher**
 
-Reemplazar `src/main.js` temporalmente para verificar `CallButton` en aislamiento:
+Temporarily replace `src/main.js` to verify `CallButton` in isolation:
 ```js
 import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
@@ -713,31 +713,31 @@ Run:
 npm run dev
 ```
 Expected:
-- Cada clic en un botón "Call" lo cambia a rojo "Waiting".
-- Otro clic lo cambia a "Arrived" (blanco con borde verde) y aparece "3 sec" en la columna de tiempo.
-- Otro clic lo vuelve a "Call" verde, el tiempo se vacía.
-- Console: cada clic loguea `requestElevator <floor>`.
+- Each click on a "Call" button changes it to red "Waiting".
+- Another click changes it to "Arrived" (white with green border) and "3 sec" appears in the time column.
+- Another click brings it back to green "Call", the time clears.
+- Console: each click logs `requestElevator <floor>`.
 
-Cortar el server.
+Stop the server.
 
-- [ ] **Step 5.3: Commit (sin volver main.js — lo dejamos así porque Task 6 lo va a refactor de nuevo)**
+- [ ] **Step 5.3: Commit (don't restore main.js — leave as is, Task 6 refactors it again)**
 
 ```bash
 git add src/CallButton.js src/main.js
-git commit -m "feat: CallButton con estados y verificación manual"
+git commit -m "feat: CallButton with states and manual verification"
 ```
 
 ---
 
-## Task 6: Clase `Elevator` con movimiento CSS
+## Task 6: `Elevator` class with CSS movement
 
 **Files:**
 - Create: `src/Elevator.js`
-- Modify: `src/main.js` (verificación manual del movimiento)
+- Modify: `src/main.js` (manual movement verification)
 
-- [ ] **Step 6.1: Crear `src/Elevator.js`**
+- [ ] **Step 6.1: Create `src/Elevator.js`**
 
-Contenido completo:
+Full contents:
 ```js
 import { FLOOR_DURATION_MS, REST_MS } from './config.js';
 
@@ -812,11 +812,11 @@ export class Elevator {
 }
 ```
 
-Nota: el `if (distance === 0)` cubre el caso "llamada al mismo piso donde el elevador ya está". CSS no dispara `transitionend` si no hay cambio de transform → forzamos con `setTimeout(0)`.
+Note: the `if (distance === 0)` covers the "call to the same floor where the elevator already is" case. CSS doesn't fire `transitionend` if the transform doesn't change → force it with `setTimeout(0)`.
 
-- [ ] **Step 6.2: Verificación manual con dispatcher fake**
+- [ ] **Step 6.2: Manual verification with fake dispatcher**
 
-Reemplazar `src/main.js` temporalmente:
+Temporarily replace `src/main.js`:
 ```js
 import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
@@ -896,32 +896,32 @@ Run:
 npm run dev
 ```
 Expected:
-- Click en "Call" del piso 5: el primer elevador sube suavemente al piso 5 (~4 segundos).
-- Al llegar, botón pasa a "Arrived" con un tiempo (ej "4 sec"), el elevador queda 2 segundos.
-- Después de 2s el botón vuelve a "Call".
-- Click en otros pisos sigue funcionando, agarrando un elevador idle.
-- Si todos están ocupados, en consola aparece "no idle" y el botón no cambia (esto es el bug que arregla el Dispatcher real).
+- Click on "Call" of floor 5: the first elevator smoothly rides up to floor 5 (~4 seconds).
+- On arrival, the button changes to "Arrived" with a time (e.g. "4 sec"), the elevator stays for 2 seconds.
+- After 2s the button goes back to "Call".
+- Clicks on other floors keep working, picking an idle elevator.
+- If all are busy, "no idle" shows in the console and the button doesn't change (this is the bug the real Dispatcher fixes).
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 6.3: Commit**
 
 ```bash
 git add src/Elevator.js src/main.js
-git commit -m "feat: Elevator con movimiento CSS y lifecycle"
+git commit -m "feat: Elevator with CSS movement and lifecycle"
 ```
 
 ---
 
-## Task 7: Clase `Dispatcher` con algoritmo y cola
+## Task 7: `Dispatcher` class with algorithm and queue
 
 **Files:**
 - Create: `src/Dispatcher.js`
-- Modify: `src/main.js` (usar el Dispatcher real)
+- Modify: `src/main.js` (use the real Dispatcher)
 
-- [ ] **Step 7.1: Crear `src/Dispatcher.js`**
+- [ ] **Step 7.1: Create `src/Dispatcher.js`**
 
-Contenido completo (sin sonido ni timer de display todavía — eso entra en tasks 9 y 10):
+Full contents (no sound or display timer yet — those come in tasks 9 and 10):
 ```js
 import { formatTime } from './format.js';
 
@@ -995,9 +995,9 @@ export class Dispatcher {
 }
 ```
 
-- [ ] **Step 7.2: Reemplazar `src/main.js` con el wiring usando Dispatcher real**
+- [ ] **Step 7.2: Replace `src/main.js` with the wiring using the real Dispatcher**
 
-Contenido completo:
+Full contents:
 ```js
 import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
@@ -1053,40 +1053,40 @@ elevators.forEach((e, i) => e.attach(shafts.children[i]));
 dispatcher.setActors(elevators, buttons);
 ```
 
-- [ ] **Step 7.3: Verificación manual del algoritmo y la cola**
+- [ ] **Step 7.3: Manual verification of algorithm and queue**
 
 Run:
 ```bash
 npm run dev
 ```
-Cosas a verificar (probar en este orden):
+Things to verify (test in this order):
 
-1. **Asignación más cercana:** llamar al piso 0 (Ground). Debería responder el primer elevador (todos están en Ground inicialmente; desempate por menor índice → el 0).
-2. **Cuando un elevador está en otro piso:** después de la primera llamada, llamar al piso 9 mientras el primer elevador está volviendo o ya en algún piso intermedio. Debería responder el más cercano libre.
-3. **Cola FIFO:** llamar a 5 pisos distintos en rápida sucesión (5, 7, 3, 9, 1). Los 5 elevadores arrancan, cada uno a un piso. Llamar al piso 0 y al piso 2 mientras todos viajan. Esos quedan encolados. Al ir terminando, los elevadores que vuelven a `idle` toman las llamadas de la cola en orden (0 primero, luego 2).
-4. **Doble click protegido:** clickear dos veces seguidas el mismo botón Call. La segunda no debería hacer nada (el botón ya está en `waiting`).
-5. **No hay errores en consola.**
+1. **Closest assignment:** call floor 0 (Ground). The first elevator should respond (all start at Ground; tie-break by smallest index → 0).
+2. **When an elevator is on another floor:** after the first call, call floor 9 while the first elevator is returning or already on some intermediate floor. The closest idle one should respond.
+3. **FIFO queue:** call 5 distinct floors in quick succession (5, 7, 3, 9, 1). All 5 elevators start, each to one floor. Call floor 0 and floor 2 while all are traveling. Those queue up. As elevators finish, the ones that go back to `idle` take queued calls in order (0 first, then 2).
+4. **Double-click protected:** click the same Call button twice quickly. The second one should do nothing (the button is already in `waiting`).
+5. **No errors in the console.**
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 7.4: Commit**
 
 ```bash
 git add src/Dispatcher.js src/main.js
-git commit -m "feat: Dispatcher con algoritmo más cercano y cola FIFO"
+git commit -m "feat: Dispatcher with closest algorithm and FIFO queue"
 ```
 
 ---
 
-## Task 8: Clase `Building` (refactor del bootstrap)
+## Task 8: `Building` class (bootstrap refactor)
 
 **Files:**
 - Create: `src/Building.js`
-- Modify: `src/main.js` (queda como entry point delgado)
+- Modify: `src/main.js` (now a thin entry point)
 
-- [ ] **Step 8.1: Crear `src/Building.js`**
+- [ ] **Step 8.1: Create `src/Building.js`**
 
-Contenido completo:
+Full contents:
 ```js
 import { FLOORS, ELEVATORS } from './config.js';
 import { CallButton } from './CallButton.js';
@@ -1156,9 +1156,9 @@ export class Building {
 }
 ```
 
-- [ ] **Step 8.2: Simplificar `src/main.js`**
+- [ ] **Step 8.2: Simplify `src/main.js`**
 
-Reemplazar contenido completo:
+Replace full contents:
 ```js
 import './styles/main.scss';
 import { Building } from './Building.js';
@@ -1167,44 +1167,44 @@ const root = document.querySelector('.building');
 new Building(root);
 ```
 
-- [ ] **Step 8.3: Verificación manual**
+- [ ] **Step 8.3: Manual verification**
 
 Run:
 ```bash
 npm run dev
 ```
-Expected: comportamiento idéntico al Task 7. Todo sigue funcionando — el refactor no cambia behavior. Hacer una llamada y confirmar que el elevador viaja, llega y vuelve a Call.
+Expected: identical behavior to Task 7. Everything keeps working — the refactor doesn't change behavior. Make a call and confirm the elevator travels, arrives, and returns to Call.
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 8.4: Commit**
 
 ```bash
 git add src/Building.js src/main.js
-git commit -m "refactor: extraer Building.js como bootstrap"
+git commit -m "refactor: extract Building.js as bootstrap"
 ```
 
 ---
 
-## Task 9: Display del tiempo en vivo durante `waiting`
+## Task 9: Live wait-time display during `waiting`
 
 **Files:**
 - Modify: `src/Dispatcher.js`
 
-- [ ] **Step 9.1: Agregar el ticker de tiempo al Dispatcher**
+- [ ] **Step 9.1: Add the time ticker to the Dispatcher**
 
-Editar `src/Dispatcher.js`. Cambiar la primera línea de imports a:
+Edit `src/Dispatcher.js`. Change the first import line to:
 ```js
 import { formatTime } from './format.js';
 import { TIME_REFRESH_MS } from './config.js';
 ```
 
-Agregar al final del `constructor`, después de inicializar las propiedades, esta línea:
+Add at the end of the `constructor`, after initializing properties, this line:
 ```js
 this._startTicker();
 ```
 
-Agregar como método nuevo de la clase (después de `_pickClosest`):
+Add as a new method of the class (after `_pickClosest`):
 ```js
 _startTicker() {
   setInterval(() => this._tick(), TIME_REFRESH_MS);
@@ -1214,157 +1214,140 @@ _tick() {
   const now = performance.now();
   for (const [elevator, call] of this.activeCalls) {
     if (elevator.state === 'moving') {
-      this.buttons[call.floor].setState('waiting');
       this.buttons[call.floor].timeEl.textContent = formatTime(now - call.startTime);
     }
   }
 }
 ```
 
-Nota: el `_tick` solo actualiza pisos cuyas llamadas están en estado `moving` (waiting visible). Los `arrived` quedan congelados — `onArrival` ya seteó el texto final y nadie lo toca.
+Note: `_tick` only updates floors whose calls are in `moving` state (visible waiting). The `arrived` ones stay frozen — `onArrival` already set the final text and nobody touches it.
 
-Hay un detalle: estamos llamando `setState('waiting')` cada tick, lo cual reescribe el texto del botón. Para evitar borrar el `timeText`, mejoremos `setState` no tocar `timeEl` si se llama con `timeText` vacío y el estado no cambió. Pero más simple: solo actualizar el span de tiempo directamente.
-
-Refactor: dejar `_tick` así:
-```js
-_tick() {
-  const now = performance.now();
-  for (const [elevator, call] of this.activeCalls) {
-    if (elevator.state === 'moving') {
-      this.buttons[call.floor].timeEl.textContent = formatTime(now - call.startTime);
-    }
-  }
-}
-```
-
-El `setState('waiting')` original (en `requestElevator`) ya dejó el botón en estado correcto; el tick solo refresca el texto del tiempo. El `setState('arrived', ...)` final, cuando llega, sobreescribe ese texto con el valor congelado.
-
-- [ ] **Step 9.2: Verificación manual**
+- [ ] **Step 9.2: Manual verification**
 
 Run:
 ```bash
 npm run dev
 ```
 Expected:
-- Llamar al piso 9 desde el Ground (distancia 9 × 800ms = 7.2s).
-- Mientras el elevador sube, el span de tiempo del piso 9 muestra "0 sec", "1 sec", "2 sec"… avanzando cada segundo.
-- Al llegar, el span se congela con el tiempo final (~ "7 sec").
-- Después de 2s vuelve a vacío.
+- Call floor 9 from Ground (distance 9 × 800ms = 7.2s).
+- While the elevator goes up, the time span at floor 9 shows "0 sec", "1 sec", "2 sec"... advancing every second.
+- On arrival, the span freezes at the final time (~ "7 sec").
+- After 2s it goes back to empty.
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 9.3: Commit**
 
 ```bash
 git add src/Dispatcher.js
-git commit -m "feat: display del tiempo de espera en vivo"
+git commit -m "feat: live wait time display"
 ```
 
 ---
 
-## Task 10: Sonido al llegar
+## Task 10: Sound on arrival
 
 **Files:**
-- Create: `public/ding.mp3` (placeholder — el usuario reemplaza)
+- Create: `public/ding.wav` (placeholder — user replaces)
 - Modify: `src/Dispatcher.js`
 
-- [ ] **Step 10.1: Conseguir un ding placeholder**
+- [ ] **Step 10.1: Get a placeholder ding**
 
-El usuario debe colocar un archivo `ding.mp3` corto en `public/ding.mp3`. Si no tiene uno, opciones rápidas:
+The user should place a short `ding.wav` file at `public/ding.wav`. If they don't have one, quick options:
 
-- Descargar uno gratuito de freesound.org buscando "elevator ding" o "bell short".
-- Generar uno con un oscilador en cualquier DAW.
+- Download a free one from freesound.org searching "elevator ding" or "bell short".
+- Generate one with an oscillator in any DAW.
 
-Para no bloquear el desarrollo, crear un placeholder vacío:
+To avoid blocking development, create an empty placeholder:
 ```bash
-touch public/ding.mp3
+touch public/ding.wav
 ```
-Esto deja la URL válida (no 404) aunque el sonido no se escuche. Más tarde reemplazar el archivo.
+This keeps the URL valid (no 404) even if no sound plays. Replace the file later.
 
-- [ ] **Step 10.2: Instanciar `Audio` en el Dispatcher**
+- [ ] **Step 10.2: Instantiate `Audio` in the Dispatcher**
 
-Editar `src/Dispatcher.js`.
+Edit `src/Dispatcher.js`.
 
-En el `constructor`, agregar antes de `this._startTicker();`:
+In the `constructor`, add before `this._startTicker();`:
 ```js
-this.ding = new Audio('/ding.mp3');
+this.ding = new Audio('/ding.wav');
 ```
 
-En el método `onArrival`, agregar como primera línea después de la validación:
+In `onArrival`, add as the first line after the validation:
 ```js
 this.ding.currentTime = 0;
 this.ding.play().catch(() => { /* autoplay denied or empty file */ });
 ```
 
-El `.catch(() => {})` evita una unhandled promise rejection si el archivo está vacío o si el browser bloqueó (no debería, porque hay user gesture, pero es defensivo).
+The `.catch(() => {})` avoids an unhandled promise rejection if the file is empty or the browser blocks it (it shouldn't, because there's user gesture, but it's defensive).
 
-- [ ] **Step 10.3: Verificación manual**
+- [ ] **Step 10.3: Manual verification**
 
 Run:
 ```bash
 npm run dev
 ```
 Expected:
-- Si `ding.mp3` tiene contenido válido: suena al llegar cada elevador.
-- Si está vacío: no suena nada, pero tampoco rompe nada (sin errores en consola más allá del DEBUG de Audio fallido, que está catcheado).
+- If `ding.wav` has valid content: ding plays on each elevator arrival.
+- If empty: no sound plays, but nothing breaks either (no console errors beyond a caught DEBUG of failed Audio).
 
-Cortar el server.
+Stop the server.
 
 - [ ] **Step 10.4: Commit**
 
 ```bash
-git add src/Dispatcher.js public/ding.mp3
-git commit -m "feat: ding al llegar"
+git add src/Dispatcher.js public/ding.wav
+git commit -m "feat: ding on arrival"
 ```
 
 ---
 
-## Task 11: Polish + checklist E2E final
+## Task 11: Polish + final E2E checklist
 
 **Files:**
-- Modify: `public/elevator.svg` (el usuario reemplaza con el del Drive si lo tiene)
-- Modify: cualquier ajuste de SCSS según hace falta tras la inspección visual
+- Modify: `public/elevator.svg` (user replaces with the Drive one if available)
+- Modify: any SCSS adjustment needed after visual inspection
 
-- [ ] **Step 11.1: Reemplazar el SVG del elevador**
+- [ ] **Step 11.1: Replace the elevator SVG**
 
-El usuario debe descargar el SVG provisto en la consigna desde:
+The user should download the SVG provided by the brief from:
 ```
 https://drive.google.com/file/d/1I9Mvf3DqCvKjtkkCVyo9Z7wUXq_NgO4m/view?usp=sharing
 ```
-y colocarlo en `public/elevator.svg`, reemplazando el placeholder creado en Task 4.
+and place it at `public/elevator.svg`, replacing the placeholder created in Task 4.
 
-Si el SVG provisto tiene `fill="..."` propio, el `filter: brightness(0)` del SCSS puede ser inadecuado. En ese caso, ajustar `src/styles/_elevator.scss` removiendo los filters y usando colores nativos del SVG.
+If the provided SVG has its own `fill="..."`, the `filter: brightness(0)` in the SCSS may be inadequate. In that case, adjust `src/styles/_elevator.scss` removing the filters and using the SVG's native colors.
 
-- [ ] **Step 11.2: Reemplazar `public/ding.mp3` con un sonido real**
+- [ ] **Step 11.2: Replace `public/ding.wav` with a real sound**
 
-Reemplazar el archivo vacío de Task 10 por un mp3 corto real.
+Replace the empty file from Task 10 with a real short wav.
 
-- [ ] **Step 11.3: Checklist E2E final**
+- [ ] **Step 11.3: Final E2E checklist**
 
 Run:
 ```bash
 npm run dev
 ```
 
-Verificar uno por uno (marcar mentalmente):
+Verify one by one (check mentally):
 
-1. **Render inicial:** edificio con 10 pisos, 5 elevadores en Ground, 10 botones "Call" verdes a la derecha. Sin errores en consola.
-2. **Llamada simple:** click en piso 5 → botón pasa a "Waiting" rojo → elevador 0 sube suavemente → al llegar suena el ding → botón pasa a "Arrived" verde con borde y muestra "X sec" → pasados 2s vuelve a "Call" verde.
-3. **Tiempo en vivo:** durante el viaje al piso 5, el número de segundos se va incrementando cada 1s.
-4. **Doble click protegido:** click dos veces seguidas en el mismo botón → la segunda no hace nada.
-5. **Asignación más cercana:** después de la primera llamada, llamar al piso 6 → debería responder el más cercano libre.
-6. **Cola FIFO:** llamar a 5 pisos distintos rápido → los 5 elevadores arrancan. Llamar al 0 y al 1 → quedan encolados. Al ir terminando los 5, los que vuelven a idle toman las llamadas encoladas EN ORDEN (0 antes que 1).
-7. **Múltiples viajes al mismo elevador:** click en piso 9, esperar que llegue y vuelva a idle. Click en piso 0. El mismo elevador debería bajar a Ground.
-8. **Estado visual del elevador:** durante movimiento se ve diferente (rojo) que en idle (negro) que en arrived (verde). Si el SVG tiene fill propio, los estados pueden distinguirse de otra forma — ajustar SCSS si hace falta.
-9. **Sonido:** se escucha el ding cada vez que un elevador llega (si el mp3 tiene contenido).
+1. **Initial render:** building with 10 floors, 5 elevators at Ground, 10 green "Call" buttons on the right. No errors in console.
+2. **Simple call:** click floor 5 → button changes to red "Waiting" → elevator 0 rides up smoothly → on arrival the ding plays → button changes to green "Arrived" with border and shows "X sec" → after 2s back to green "Call".
+3. **Live time:** during the trip to floor 5, the second counter ticks up every 1s.
+4. **Double-click protected:** click twice on the same button → the second does nothing.
+5. **Closest assignment:** after the first call, call floor 6 → the closest idle one should respond.
+6. **FIFO queue:** call 5 distinct floors quickly → all 5 elevators start. Call 0 and 1 → they queue up. As the 5 finish, the ones returning to idle take queued calls IN ORDER (0 before 1).
+7. **Multiple trips to the same elevator:** click floor 9, wait for it to arrive and return to idle. Click floor 0. The same elevator should ride down to Ground.
+8. **Elevator visual state:** during movement it looks different (red) than idle (black) than arrived (green). If the SVG has its own fill, states may differ in another way — adjust SCSS if needed.
+9. **Sound:** the ding plays every time an elevator arrives (if the wav has content).
 
-- [ ] **Step 11.4: Crear README mínimo para defensa**
+- [ ] **Step 11.4: Create minimal README for the defense**
 
-Crear `README.md` en la raíz del proyecto:
+Create `README.md` in the project root:
 ```markdown
 # Elevators
 
-Implementación del home task de Origami: simulación de sistema de elevadores con 10 pisos y 5 ascensores.
+Implementation of Origami's home task: elevator system simulation with 10 floors and 5 elevators.
 
 ## Run
 
@@ -1373,65 +1356,65 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173` automáticamente.
+Opens `http://localhost:5173` automatically.
 
-## Spec y plan
+## Spec and plan
 
-- Diseño: `docs/superpowers/specs/2026-06-17-elevators-design.md`
-- Plan de implementación: `docs/superpowers/plans/2026-06-17-elevators-implementation.md`
+- Design: `docs/superpowers/specs/2026-06-17-elevators-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-06-17-elevators-implementation.md`
 
-## Arquitectura en una mirada
+## Architecture at a glance
 
-Cuatro clases con acoplamiento directo por referencia:
+Four classes with direct coupling by reference:
 
-- `Building` — bootstrap; instancia y cablea.
-- `Dispatcher` — cerebro; recibe llamadas, asigna por cercanía, encola FIFO si todos ocupados, coordina el lifecycle visual.
-- `Elevator` — entidad; estado `idle`/`moving`/`arrived`, movimiento con CSS transition, notifica al Dispatcher en `onArrival` y `onIdle`.
-- `CallButton` — UI; click → `dispatcher.requestElevator(floor)`, método `setState` para reflejar estado.
+- `Building` — bootstrap; instantiates and wires.
+- `Dispatcher` — brain; receives calls, assigns by proximity, FIFO queue if all busy, coordinates the visual lifecycle.
+- `Elevator` — entity; `idle`/`moving`/`arrived` state, movement with CSS transition, notifies the Dispatcher in `onArrival` and `onIdle`.
+- `CallButton` — UI; click → `dispatcher.requestElevator(floor)`, `setState` method to reflect state.
 
-## Decisiones clave
+## Key decisions
 
-Ver §13 del spec para el listado completo de "preguntas esperadas en defensa + respuestas".
+See §13 of the spec for the full list of "expected questions in the defense + answers".
 ```
 
-- [ ] **Step 11.5: Commit final**
+- [ ] **Step 11.5: Final commit**
 
 ```bash
-git add public/elevator.svg public/ding.mp3 README.md src/styles/
-git commit -m "feat: assets reales + README + ajustes de polish"
+git add public/elevator.svg public/ding.wav README.md src/styles/
+git commit -m "feat: real assets + README + polish adjustments"
 ```
 
 ---
 
 ## Self-Review
 
-Recorrida final del plan vs el spec:
+Final pass through the plan against the spec:
 
-**Coverage del spec:**
+**Spec coverage:**
 
-- §1 Alcance V1 — cubierto por Tasks 4 (skeleton), 5 (button), 6 (elevator), 7 (dispatcher), 9 (tiempo), 10 (sonido).
+- §1 V1 scope — covered by Tasks 4 (skeleton), 5 (button), 6 (elevator), 7 (dispatcher), 9 (time), 10 (sound).
 - §2 Stack — Task 1.
-- §3 Estructura de archivos — Tasks 1-11.
-- §4 Templates HTML — Task 4.
-- §5 Arquitectura (4 clases + acoplamiento directo) — Tasks 5, 6, 7, 8.
-- §6 Algoritmo — Task 7.
-- §7 Lifecycle + temporización — Task 6.
-- §8 Display de tiempo — Task 9.
-- §9 Layout y SCSS — Tasks 2, 4.
-- §10 Sonido — Task 10.
-- §11 Hooks V2 — `Elevator` recibe `config = {}` (Task 6). El resto queda en documentación del spec; en V1 no hay código.
-- §12 No hacer — respetado: sin tests, sin TS, sin SCAN/LOOK, sin reasignación.
-- §13 Defensa — el README en Task 11.4 redirige al spec.
+- §3 File structure — Tasks 1-11.
+- §4 HTML templates — Task 4.
+- §5 Architecture (4 classes + direct coupling) — Tasks 5, 6, 7, 8.
+- §6 Algorithm — Task 7.
+- §7 Lifecycle + timing — Task 6.
+- §8 Time display — Task 9.
+- §9 Layout and SCSS — Tasks 2, 4.
+- §10 Sound — Task 10.
+- §11 V2 hooks — `Elevator` receives `config = {}` (Task 6). The rest is documented in the spec; V1 has no code for these.
+- §12 Do not — respected: no tests, no TS, no SCAN/LOOK, no reassignment.
+- §13 Defense — README in Task 11.4 redirects to the spec.
 
-**Sin placeholders:** revisé las 11 tasks. No hay "TODO", "implementar después" ni "similar a Task N". El código completo de cada archivo está en el step donde se crea/edita.
+**No placeholders:** reviewed the 11 tasks. There is no "TODO", "implement later", or "similar to Task N". The full code of each file is in the step where it's created/edited.
 
 **Type consistency:**
 - `Dispatcher.requestElevator(floor)` — Task 5 (call), Task 7 (def).
-- `Dispatcher.onArrival(elevator, durationMs)` y `Dispatcher.onIdle(elevator)` — Task 6 (call), Task 7 (def).
-- `Elevator.goTo(floor)` y `Elevator.rest()` — Task 6 (def), Task 7 (call).
+- `Dispatcher.onArrival(elevator, durationMs)` and `Dispatcher.onIdle(elevator)` — Task 6 (call), Task 7 (def).
+- `Elevator.goTo(floor)` and `Elevator.rest()` — Task 6 (def), Task 7 (call).
 - `Elevator.attach(shaftElement)` — Task 6 (def), Task 7 + 8 (call).
 - `CallButton.setState(state, timeText)` — Task 5 (def), Task 7 + 9 (call).
-- `CallButton.timeEl` — accedido en Task 9 directamente; está definido en Task 5 constructor.
-- `Elevator.state` y `CallButton.state` — usados en Dispatcher (Task 7) para filtrado y guard; coinciden con definición.
+- `CallButton.timeEl` — accessed in Task 9 directly; defined in Task 5 constructor.
+- `Elevator.state` and `CallButton.state` — used in Dispatcher (Task 7) for filtering and guards; consistent with definition.
 
-Todo cierra.
+All consistent.

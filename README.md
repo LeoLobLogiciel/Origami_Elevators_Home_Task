@@ -1,6 +1,6 @@
 # Elevators
 
-Implementación del home task de Origami: simulación de sistema de elevadores con 10 pisos y 5 ascensores.
+Implementation of Origami's home task: elevator system simulation with 10 floors and 5 elevators.
 
 ## Run
 
@@ -9,34 +9,34 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173` automáticamente.
+Opens `http://localhost:5173` automatically.
 
-## Spec y plan
+## Spec and plan
 
-- Diseño: [`docs/superpowers/specs/2026-06-17-elevators-design.md`](docs/superpowers/specs/2026-06-17-elevators-design.md)
-- Plan de implementación: [`docs/superpowers/plans/2026-06-17-elevators-implementation.md`](docs/superpowers/plans/2026-06-17-elevators-implementation.md)
+- Design: [`docs/superpowers/specs/2026-06-17-elevators-design.md`](docs/superpowers/specs/2026-06-17-elevators-design.md)
+- Implementation plan: [`docs/superpowers/plans/2026-06-17-elevators-implementation.md`](docs/superpowers/plans/2026-06-17-elevators-implementation.md)
 
-## Arquitectura en una mirada
+## Architecture at a glance
 
-Cuatro clases con acoplamiento directo por referencia:
+Four classes with direct coupling by reference:
 
-- **`Building`** — bootstrap; instancia y cablea.
-- **`Dispatcher`** — cerebro; recibe llamadas, asigna por cercanía, encola FIFO si todos ocupados, coordina el lifecycle visual, dispara el ding.
-- **`Elevator`** — entidad; estados `idle`/`moving`/`arrived`, movimiento con CSS transition, notifica al Dispatcher en `onArrival` y `onIdle`.
-- **`CallButton`** — UI; clic → `dispatcher.requestElevator(floor)`, método `setState` para reflejar estado visual.
+- **`Building`** — bootstrap; instantiates and wires.
+- **`Dispatcher`** — brain; receives calls, assigns by proximity, FIFO queue if all busy, coordinates the visual lifecycle, fires the ding.
+- **`Elevator`** — entity; `idle`/`moving`/`arrived` states, movement with CSS transition, notifies the Dispatcher in `onArrival` and `onIdle`.
+- **`CallButton`** — UI; click → `dispatcher.requestElevator(floor)`, `setState` method to reflect visual state.
 
 ## Stack
 
-- Vanilla JS (ES modules), sin frameworks runtime
-- SCSS con BEM
+- Vanilla JS (ES modules), no runtime frameworks
+- SCSS with BEM
 - Vite (dev server + SCSS compiler)
-- Sonido: `HTMLAudioElement`
+- Sound: `HTMLAudioElement`
 
 ## Assets
 
-- `public/elevator.svg` — ícono de elevador (Icons8).
-- `public/ding.wav` — sonido de arribo (freesound.org).
+- `public/elevator.svg` — elevator icon (Icons8).
+- `public/ding.wav` — arrival sound (freesound.org).
 
-## Decisiones clave
+## Key decisions
 
-Ver §13 del spec — listado de "preguntas esperadas en defensa + respuestas".
+See §13 of the spec — list of "expected questions in the defense + answers".

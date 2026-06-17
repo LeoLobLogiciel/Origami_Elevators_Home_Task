@@ -1,68 +1,68 @@
 # Home Task — Elevators (Origami) — Design Spec
 
-**Fecha:** 2026-06-17
-**Autor:** Leo
-**Contexto:** Home task para entrevista en Origami. Construcción asistida por IA permitida; **defensa presencial sin IA**. El código debe ser entendible y reproducible a mano por el autor. Stack del puesto: Vue.
+**Date:** 2026-06-17
+**Author:** Leo
+**Context:** Home task for an interview at Origami. AI-assisted construction is allowed; **the evaluation is in person, without AI**. The code must be understandable and reproducible by the author from memory. The role uses Vue.
 
 ---
 
-## 1. Alcance V1
+## 1. V1 Scope
 
-Sistema de elevadores en una página web única.
+Single-page elevator system.
 
-- 10 pisos (Ground Floor + 1° a 9°).
-- 5 elevadores, cada uno en su propio carril (shaft) vertical.
-- 1 botón "Call" por piso, en una columna a la derecha.
-- Estados visuales del botón: `call` (verde), `waiting` (rojo), `arrived` (verde con borde).
-- Estados visuales del elevador: `idle` (negro), `moving` (rojo), `arrived` (verde).
-- Movimiento suave entre pisos.
-- Sonido al llegar al piso destino.
-- Cola FIFO si todos los elevadores están ocupados (sin perder llamadas).
-- Display del tiempo de espera del que llamó, en vivo durante `waiting`, congelado durante `arrived`.
+- 10 floors (Ground Floor + 1st to 9th).
+- 5 elevators, each in its own vertical shaft.
+- 1 Call button per floor in a column on the right.
+- Button visual states: `call` (green), `waiting` (red), `arrived` (green with border).
+- Elevator visual states: `idle` (black), `moving` (red), `arrived` (green).
+- Smooth movement between floors.
+- Sound when arriving at the destination floor.
+- FIFO queue when all elevators are busy (no calls dropped).
+- Display of the caller's wait time, live during `waiting`, frozen during `arrived`.
 
-**Fuera de alcance V1:** tests automatizados, TypeScript, algoritmo SCAN/LOOK, reasignación dinámica, persistencia, ARIA exhaustivo. Las features futuras descritas en §11 se diseñan como hooks pero no se implementan.
+**Out of V1 scope:** automated tests, TypeScript, SCAN/LOOK algorithm, dynamic reassignment, persistence, exhaustive ARIA. The future features described in §11 are designed as hooks but not implemented.
 
 ## 2. Stack
 
-- **Vanilla JS** (módulos ES nativos, sin frameworks).
-- **SCSS** con metodología BEM.
-- **Vite** como dev server y compilador SCSS.
-- **Sin librerías externas** salvo Vite (dev-only).
+- **Vanilla JS** (native ES modules, no frameworks).
+- **SCSS** with BEM methodology.
+- **Vite** as dev server and SCSS compiler.
+- **No external libraries** except Vite (dev-only).
 
-Justificación: la consigna pide Vanilla. SCSS es sugerido por la consigna y conocido por el autor desde Vue. Vite es estándar del ecosistema Vue, setup mínimo, agrega solo SCSS compilation y serve.
+Rationale: the brief asks for Vanilla. SCSS is suggested by the brief and familiar to the author from Vue. Vite is the standard tool in the Vue ecosystem, has minimal setup, and only adds SCSS compilation and a dev server.
 
-## 3. Estructura de archivos
+## 3. File structure
 
 ```
 elevators/
-├── index.html              # markup raíz + <template id="..."> para piso y elevador
+├── index.html              # root markup + <template> for floor and elevator
 ├── package.json
 ├── vite.config.js
 ├── public/
-│   ├── elevator.svg        # provisto por la consigna (Google Drive)
-│   └── ding.mp3            # sonido corto de arribo
+│   ├── elevator.svg        # provided by the brief (Google Drive)
+│   └── ding.wav            # short arrival sound
 └── src/
     ├── main.js             # entry point
-    ├── config.js           # constantes
+    ├── config.js           # constants
     ├── Building.js         # bootstrap + wiring
-    ├── Dispatcher.js       # cola + algoritmo
-    ├── Elevator.js         # lifecycle + movimiento
-    ├── CallButton.js       # UI del botón
+    ├── Dispatcher.js       # queue + algorithm
+    ├── Elevator.js         # lifecycle + movement
+    ├── CallButton.js       # button UI
     ├── format.js           # ms → "5 sec" / "1 min. 30 sec."
     └── styles/
-        ├── main.scss       # @use de partials
-        ├── _variables.scss # colores, dims, --floor-height (custom property)
-        ├── _layout.scss    # .building, columnas
+        ├── main.scss       # @use of partials
+        ├── _variables.scss # colors, dims, --floor-height (custom property)
+        ├── _layout.scss    # .building, columns
         ├── _floors.scss    # .floor-label
-        ├── _elevator.scss  # .shaft + .shaft__elevator + estados
-        └── _button.scss    # .call-row + .call-button + estados
+        ├── _elevator.scss  # .shaft + .shaft__elevator + states
+        └── _button.scss    # .call-row + .call-button + states
 ```
 
-**Decisión: estructura plana, sin `core/` ni `ui/`.** Con 6 archivos JS, agrupar en carpetas es over-engineering. El nombre del archivo es la responsabilidad.
+**Decision: flat structure, no `core/` or `ui/`.** With 6 JS files, grouping into folders is over-engineering. The filename is the responsibility.
 
-## 4. Estrategia de markup
+## 4. Markup strategy
 
-El HTML no se construye desde JS. El `index.html` contiene los `<template>` HTML5 que definen el markup de cada tipo de fila. En `main.js`, al iniciar, los templates se clonan N veces.
+HTML is not built from JS. The `index.html` contains the HTML5 `<template>` elements that define the markup for each row type. In `main.js`, on startup, templates are cloned N times.
 
 ```html
 <template id="elevator-template">
@@ -79,26 +79,26 @@ El HTML no se construye desde JS. El `index.html` contiene los `<template>` HTML
 </template>
 ```
 
-**Justificación:** la consigna explícita *"No need to build the HTML in JS"* se respeta porque el markup vive en HTML (`<template>`). JS solo hace `template.content.cloneNode(true)`. Cambiar la cantidad de pisos o elevadores es modificar una constante en `config.js`, no editar 50 líneas de HTML.
+**Rationale:** the brief's explicit *"No need to build the HTML in JS"* is honored because the markup lives in HTML (`<template>`). JS only calls `template.content.cloneNode(true)`. Changing the number of floors or elevators is a single constant change, not editing 50 lines of HTML.
 
-## 5. Arquitectura: 4 clases + 1 patrón
+## 5. Architecture: 4 classes + 1 pattern
 
-### 5.1. Patrón de comunicación
+### 5.1. Communication pattern
 
-**Acoplamiento directo por referencia.** Cada clase recibe en su constructor las referencias que necesita y llama métodos directamente sobre ellas. No hay `EventTarget`, ni callbacks inyectados, ni pub/sub.
+**Direct coupling by reference.** Each class receives in its constructor the references it needs and calls methods directly on them. There is no `EventTarget`, no injected callbacks, no pub/sub.
 
-Justificación: un único patrón en toda la base. Defendible en una sola frase: *"cada clase guarda lo que necesita y llama métodos"*. Reproducible en pizarrón sin riesgo de mezclar APIs (`addEventListener`, `dispatchEvent`, `CustomEvent`, `detail`).
+Rationale: a single pattern across the codebase. Defensible in one sentence: *"each class keeps what it needs and calls methods."* Reproducible on a whiteboard without risk of mixing APIs (`addEventListener`, `dispatchEvent`, `CustomEvent`, `detail`).
 
-### 5.2. Responsabilidades
+### 5.2. Responsibilities
 
-| Clase | Referencias que recibe | Responsabilidad |
+| Class | References received | Responsibility |
 |---|---|---|
-| `Building` | (ninguna; recibe el root DOM) | Instancia Dispatcher, Elevators, CallButtons. Cablea referencias. Es el bootstrap. |
-| `Dispatcher` | (vacío al construirse; `setActors` después) | Cerebro del sistema. Recibe llamadas, asigna por cercanía, encola si no hay libres. Coordina arrivals/idles. Reproduce el ding. Actualiza estado visual de los botones. Mantiene el `setInterval` global que actualiza tiempos en pantalla. |
-| `Elevator` | `id`, `dispatcher`, `config = {}` | Entidad de dominio. Mantiene `currentFloor` y `state` (`idle`/`moving`/`arrived`). Ejecuta movimiento via CSS transition. Mide tiempo con `performance.now()`. Notifica al dispatcher en `onArrival` y `onIdle`. El parámetro `config` es un objeto opcional; en V1 no tiene claves usadas, pero está presente como hook para V2 (ver §11). |
-| `CallButton` | `floor`, `dispatcher`, `element` (DOM) | UI del botón. Captura clicks → `dispatcher.requestElevator(floor)`. Método `setState(state, timeText)` cambia clases CSS y texto. |
+| `Building` | (none; receives the root DOM) | Instantiates Dispatcher, Elevators, CallButtons. Wires references. It is the bootstrap. |
+| `Dispatcher` | (empty at construction; `setActors` afterward) | The system's brain. Receives calls, assigns by proximity, queues if no idle elevators. Coordinates arrivals/idles. Plays the ding. Updates buttons' visual state. Holds the global `setInterval` that refreshes on-screen times. |
+| `Elevator` | `id`, `dispatcher`, `config = {}` | Domain entity. Holds `currentFloor` and `state` (`idle`/`moving`/`arrived`). Executes movement via CSS transition. Measures time with `performance.now()`. Notifies the dispatcher on `onArrival` and `onIdle`. The `config` parameter is an optional object; in V1 it has no used keys, but it's present as a hook for V2 (see §11). |
+| `CallButton` | `floor`, `dispatcher`, `element` (DOM) | Button UI. Captures clicks → `dispatcher.requestElevator(floor)`. The `setState(state, timeText)` method updates CSS classes and text. |
 
-### 5.3. Wiring en `Building`
+### 5.3. Wiring in `Building`
 
 ```js
 class Building {
@@ -117,78 +117,78 @@ class Building {
 
     this.dispatcher.setActors(this.elevators, this.buttons);
 
-    // append a root
+    // append to root
     this.mount();
   }
 }
 ```
 
-El Dispatcher se instancia primero sin actores; recibe los arrays después de que existan. Esto evita un ciclo de inicialización en el constructor.
+The Dispatcher is instantiated first without actors; it receives the arrays after they exist. This avoids an initialization cycle in the constructor.
 
-## 6. Algoritmo de asignación
+## 6. Assignment algorithm
 
-### 6.1. Estado del Elevator
+### 6.1. Elevator state
 
-Tres estados mutuamente excluyentes:
+Three mutually exclusive states:
 
-- `idle`: no atendiendo ninguna llamada. Quieto en su último piso.
-- `moving`: viajando hacia el piso de una llamada asignada.
-- `arrived`: llegó al piso, mostrando confirmación (durante `REST_MS`).
+- `idle`: not handling any call. Stationary at its last floor.
+- `moving`: traveling toward the floor of an assigned call.
+- `arrived`: reached the floor, showing confirmation (during `REST_MS`).
 
-Un elevador es candidato a recibir una nueva llamada **solamente cuando está `idle`**. Los 2 segundos en `arrived` cuentan como ocupado.
+An elevator is a candidate for a new call **only when it is `idle`**. The 2 seconds in `arrived` count as busy.
 
-### 6.2. Cuando entra una llamada al piso F
+### 6.2. When a call comes in for floor F
 
 ```
-1. Si el botón del piso F ya está en `waiting`:
-   → no hacer nada (llamada duplicada ignorada)
+1. If the button at floor F is already in `waiting`:
+   → do nothing (duplicate call ignored)
 
-2. Marcar botón F como `waiting`. Registrar startTime = performance.now().
+2. Mark button F as `waiting`. Record startTime = performance.now().
 
-3. Filtrar elevadores con state === 'idle'.
+3. Filter elevators with state === 'idle'.
 
-4a. Si hay ≥ 1 idle:
-    - Elegir el de menor |currentFloor - F|.
-    - Desempate: menor índice.
-    - Registrar activeCalls[elevator] = { floor: F, startTime }.
+4a. If at least one is idle:
+    - Pick the one with the smallest |currentFloor - F|.
+    - Tie-break: smallest index.
+    - Record activeCalls[elevator] = { floor: F, startTime }.
     - elevator.goTo(F).
 
-4b. Si no hay ninguno idle:
+4b. If none is idle:
     - queue.push({ floor: F, startTime }).
 ```
 
-### 6.3. Cuando un elevador llega (`onArrival(elevator, durationMs)`)
+### 6.3. When an elevator arrives (`onArrival(elevator, durationMs)`)
 
-El Elevator ya cambió su propio state a `arrived` antes de notificar (ver §7.1). El Dispatcher solo coordina los efectos externos.
+The Elevator has already changed its own state to `arrived` before notifying (see §7.1). The Dispatcher only coordinates the external effects.
 
 ```
 1. floor = activeCalls.get(elevator).floor.
-2. Reproducir ding (currentTime = 0; play()).
+2. Play ding (currentTime = 0; play()).
 3. button[floor].setState('arrived', formatTime(now - startTime)).
-4. elevator.rest() → el Elevator arranca su setTimeout(REST_MS) y notificará onIdle al vencer.
+4. elevator.rest() → the Elevator starts its setTimeout(REST_MS) and will notify onIdle when it expires.
 ```
 
-### 6.4. Cuando un elevador pasa a idle (`onIdle(elevator)`)
+### 6.4. When an elevator becomes idle (`onIdle(elevator)`)
 
 ```
 1. floor = activeCalls.get(elevator).floor.
 2. button[floor].setState('call').
 3. activeCalls.delete(elevator).
-4. Si queue no está vacía:
+4. If queue is not empty:
    - next = queue.shift().
    - activeCalls.set(elevator, next).
    - elevator.goTo(next.floor).
 ```
 
-**Por qué la asignación de la cola ocurre en `onIdle` y no en `onArrival`:** durante los 2 segundos en `arrived` el elevador está visualmente confirmando la llegada. Tomar otra llamada en ese momento rompería el ciclo. El costo es 2 segundos de latencia, aceptable.
+**Why queue assignment happens in `onIdle` and not in `onArrival`:** during the 2 seconds in `arrived` the elevator is visually confirming arrival. Taking another call at that moment would break the cycle. The cost is 2 seconds of latency, which is acceptable.
 
-**Por qué FIFO y no "más cercano al elevador libre":** "no perder llamadas" implica respetar orden de llegada. Reordenar por cercanía cuando se libera un elevador podría postergar indefinidamente al primero en llamar (starvation).
+**Why FIFO and not "closest to the freed elevator":** "no calls dropped" implies respecting arrival order. Reordering by proximity when an elevator frees up could indefinitely postpone the first caller (starvation).
 
-## 7. Lifecycle y temporización del Elevator
+## 7. Elevator lifecycle and timing
 
-### 7.1. Movimiento
+### 7.1. Movement
 
-CSS transition sobre `transform: translateY(...)`. La duración es dinámica vía CSS custom property.
+CSS transition on `transform: translateY(...)`. Duration is dynamic via CSS custom property.
 
 ```scss
 .shaft__elevator {
@@ -222,11 +222,11 @@ goTo(targetFloor) {
 }
 ```
 
-- **`transitionend` con `{ once: true }`**: autodesuscripción, no acumulamos listeners.
-- **`performance.now()`** y no `Date.now()`: API monotónica, no salta con cambios de reloj, precisión sub-milisegundo.
-- **CSS custom property `--travel-duration`**: la duración se setea desde JS sin tocar el SCSS de animación.
+- **`transitionend` with `{ once: true }`**: self-unsubscription, no listener buildup.
+- **`performance.now()`** instead of `Date.now()`: monotonic API, doesn't jump with clock changes, sub-millisecond precision.
+- **CSS custom property `--travel-duration`**: the duration is set from JS without touching the animation SCSS.
 
-### 7.2. Reposo
+### 7.2. Rest
 
 ```js
 rest() {
@@ -239,41 +239,41 @@ rest() {
 }
 ```
 
-### 7.3. Altura del piso: source of truth en SCSS
+### 7.3. Floor height: source of truth in SCSS
 
-`_variables.scss` define `--floor-height: 60px` como custom property en `:root`. JS la lee al construirse cada Elevator:
+`_variables.scss` defines `--floor-height: 60px` as a custom property on `:root`. JS reads it when each Elevator is constructed:
 
 ```js
 const v = getComputedStyle(document.documentElement).getPropertyValue('--floor-height');
 this.floorHeightPx = parseFloat(v);
 ```
 
-Una sola fuente de verdad. Si se modifica el SCSS, JS la pesca al iniciar.
+A single source of truth. If the SCSS is modified, JS picks it up on startup.
 
-## 8. Display del tiempo de espera
+## 8. Wait time display
 
-### 8.1. Semántica
+### 8.1. Semantics
 
-El número que aparece junto al botón es **el tiempo transcurrido desde que se presionó Call**, no el tiempo de viaje del elevador.
+The number shown next to the button is **the time elapsed since Call was pressed**, not the elevator's travel time.
 
-| Estado del botón | Texto en `.call-row__time` |
+| Button state | Text in `.call-row__time` |
 |---|---|
-| `call` | vacío |
-| `waiting` | tiempo desde startTime, actualizado cada 1000ms |
-| `arrived` | tiempo final congelado |
+| `call` | empty |
+| `waiting` | time since startTime, updated every 1000ms |
+| `arrived` | final time frozen |
 
-### 8.2. Implementación
+### 8.2. Implementation
 
-Un único `setInterval(1000)` global vive en el `Dispatcher`. En cada tick recorre `activeCalls` y para cada llamada en estado `waiting` actualiza el texto del piso correspondiente. Las llamadas en `arrived` no se tocan (quedan congeladas con el valor previo).
+A single global `setInterval(1000)` lives in the `Dispatcher`. On each tick it iterates `activeCalls` and, for each call in `waiting` state, updates the corresponding floor's text. Calls in `arrived` are not touched (they remain frozen with the previous value).
 
-### 8.3. Formato
+### 8.3. Format
 
-`format.js` exporta `formatTime(ms)`:
+`format.js` exports `formatTime(ms)`:
 
 - `< 60_000`: `"5 sec"`, `"42 sec"`.
 - `>= 60_000`: `"1 min. 30 sec."`.
 
-## 9. Layout y SCSS
+## 9. Layout and SCSS
 
 ### 9.1. DOM
 
@@ -303,12 +303,12 @@ Un único `setInterval(1000)` global vive en el `Dispatcher`. En cada tick recor
 ```
 
 - `.building`: `display: flex` horizontal.
-- `.shaft`: `position: relative`; altura `calc(var(--floor-height) * 10)`.
-- `.shaft__elevator`: `position: absolute; bottom: 0`; se mueve con `transform: translateY(...)`.
+- `.shaft`: `position: relative`; height `calc(var(--floor-height) * 10)`.
+- `.shaft__elevator`: `position: absolute; bottom: 0`; moves with `transform: translateY(...)`.
 
-### 9.2. SCSS por componente (BEM)
+### 9.2. SCSS per component (BEM)
 
-Un partial por componente. Cada partial declara su block BEM y sus modifiers.
+One partial per component. Each partial declares its BEM block and its modifiers.
 
 ```
 main.scss
@@ -319,87 +319,87 @@ main.scss
 └── @use 'button';
 ```
 
-**Estados como modifiers**, jamás como atributos JS:
+**States as modifiers**, never as JS attributes:
 
 - `.shaft__elevator--idle`, `.shaft__elevator--moving`, `.shaft__elevator--arrived`.
 - `.call-button--call`, `.call-button--waiting`, `.call-button--arrived`.
 
-JS solo hace `classList.add/remove`. El estilo vive 100% en SCSS.
+JS only calls `classList.add/remove`. Styling lives 100% in SCSS.
 
 ### 9.3. Variables
 
-- `_variables.scss` define:
-  - **CSS custom properties** en `:root` para lo que JS necesita leer: `--floor-height`.
-  - **SCSS variables** para lo demás: colores (`$color-call`, `$color-waiting`, `$color-arrived`, `$color-elevator-idle`, `$color-elevator-moving`, `$color-elevator-arrived`), dimensiones de botón, fuente.
+- `_variables.scss` defines:
+  - **CSS custom properties** on `:root` for what JS needs to read: `--floor-height`.
+  - **SCSS variables** for everything else: colors (`$color-call`, `$color-waiting`, `$color-arrived`, `$color-elevator-idle`, `$color-elevator-moving`, `$color-elevator-arrived`), button dimensions, font.
 
-## 10. Sonido
+## 10. Sound
 
 ```js
-// En Dispatcher.constructor():
-this.ding = new Audio('/ding.mp3');
+// In Dispatcher.constructor():
+this.ding = new Audio('/ding.wav');
 
-// En onArrival:
+// In onArrival:
 this.ding.currentTime = 0;
 this.ding.play();
 ```
 
-- **`HTMLAudioElement`** y no Web Audio API: WAA es para procesamiento; acá solo reproducimos un mp3.
-- **`currentTime = 0`** antes de `play()`: si el ding está sonando y otro elevador llega, sin reset el segundo `play()` es no-op.
-- **Autoplay policy**: el flow se inicia con un click del usuario → la user gesture está presente → permitido.
+- **`HTMLAudioElement`** and not Web Audio API: WAA is for processing; here we only play a sound file.
+- **`currentTime = 0`** before `play()`: if the ding is playing and another elevator arrives, without reset the second `play()` is a no-op.
+- **Autoplay policy**: the flow starts with a user click → the user gesture is present → allowed.
 
-**Limitación honesta a tener lista en defensa:** dos arribos casi simultáneos pisan el sonido entre sí. Si fuera requerimiento real se usaría un pool de `Audio` o WAA. Para este ejercicio es innecesario.
+**Honest limitation to have ready for the defense:** two nearly simultaneous arrivals overlap and clip each other's sound. If it were a real requirement, an `Audio` pool or WAA would be used. For this exercise it's unnecessary.
 
-## 11. Hooks documentados para V2
+## 11. Documented hooks for V2
 
-Estas features no se implementan en V1 pero el diseño deja lugar para que entren con cambios locales.
+These features are not implemented in V1 but the design leaves room for them to land with local changes.
 
-### 11.1. Ascensor de Shabat
+### 11.1. Shabbat elevator
 
-**Comportamiento:** no responde a llamados; ignorado por el Dispatcher.
+**Behavior:** does not respond to calls; ignored by the Dispatcher.
 
-**Hook:** el parámetro `config` del Elevator (ya presente en V1, ver §5.2) gana la clave `acceptsDispatch: boolean` con default `true`. El Dispatcher, al filtrar candidatos en §6.2 paso 3, descarta los que tengan `acceptsDispatch === false`. Un elevador Shabat se construye con `{ acceptsDispatch: false }`.
+**Hook:** the Elevator's `config` parameter (already present in V1, see §5.2) gains the key `acceptsDispatch: boolean` with default `true`. The Dispatcher, when filtering candidates in §6.2 step 3, discards those with `acceptsDispatch === false`. A Shabbat elevator is constructed with `{ acceptsDispatch: false }`.
 
-**Cambio para implementarlo:** una línea en el filtro del Dispatcher + parametrizar el config.
+**Change to implement it:** one line in the Dispatcher filter + parameterize the config.
 
-### 11.2. Botón ON/OFF por columna
+### 11.2. ON/OFF button per column
 
-**Comportamiento:** debajo de cada shaft, un botón que toggle el elevador "fuera del pool" o "dentro del pool".
+**Behavior:** below each shaft, a button toggles the elevator "out of the pool" or "back into the pool."
 
-**Hook:** reutiliza `acceptsDispatch`. Un control de UI llama `elevator.setAvailability(boolean)`, que actualiza el flag y dispara una clase CSS visual.
+**Hook:** reuses `acceptsDispatch`. A UI control calls `elevator.setAvailability(boolean)`, which updates the flag and triggers a visual CSS class.
 
-**Cambio para implementarlo:** método nuevo en `Elevator`, botón nuevo en el template, listener en `Building`. Sin tocar Dispatcher.
+**Change to implement it:** new method on `Elevator`, new button in the template, listener in `Building`. Dispatcher untouched.
 
-### 11.3. Vuelve a PB tras N segundos idle
+### 11.3. Return to Ground after N idle seconds
 
-**Comportamiento:** configurable por elevador. Al pasar a `idle`, si nadie lo llama en N segundos, viaja solo a Ground Floor (piso 0).
+**Behavior:** configurable per elevator. When entering `idle`, if no one calls it within N seconds, it travels by itself to Ground Floor (floor 0).
 
-**Hook:** `Elevator.config.returnToGround = { enabled: boolean, idleSeconds: number }`. En `Elevator.onIdle()` (después de notificar al dispatcher) arranca un `setTimeout(N * 1000)`. Si llega un `goTo` antes, se cancela. Si vence y sigue `idle`, ejecuta `this.goTo(0)`.
+**Hook:** `Elevator.config.returnToGround = { enabled: boolean, idleSeconds: number }`. In `Elevator.onIdle()` (after notifying the dispatcher) start a `setTimeout(N * 1000)`. If a `goTo` arrives before it fires, cancel it. If it fires and the elevator is still `idle`, run `this.goTo(0)`.
 
-**Cambio para implementarlo:** lógica de `setTimeout` con cancelación en `Elevator`, sin tocar Dispatcher.
+**Change to implement it:** `setTimeout` logic with cancellation in `Elevator`, Dispatcher untouched.
 
-## 12. Decisiones explícitas de NO hacer
+## 12. Explicit "do not" decisions
 
-| No hago | Por qué |
+| Not doing | Why |
 |---|---|
-| Tests automatizados | Foco del ejercicio: claridad de diseño. Con 4 clases y un flujo lineal el ROI es bajo y agrega superficie a defender. |
-| TypeScript | La consigna pide Vanilla JS. |
-| Algoritmo SCAN/LOOK | La consigna pide "más cercano", no optimizado direccional. |
-| Reasignación dinámica | Una vez asignado, no se reasigna. Más simple, suficiente. |
-| Persistencia | No solicitada. |
-| ARIA exhaustivo | Sí semántica básica: `<button>` real, no `<div onclick>`. |
-| `EventTarget` / pub-sub | Un único patrón (acoplamiento directo) en toda la base. Defendibilidad sobre flexibilidad. |
-| Build HTML desde JS | Consigna lo prohíbe. `<template>` HTML5 cubre la necesidad de DRY. |
+| Automated tests | The point of the exercise is design clarity. With 4 classes and a linear flow the ROI is low and it adds surface area to defend. |
+| TypeScript | The brief asks for Vanilla JS. |
+| SCAN/LOOK algorithm | The brief asks for "closest", not directional optimization. |
+| Dynamic reassignment | Once assigned, no reassignment. Simpler, sufficient. |
+| Persistence | Not requested. |
+| Exhaustive ARIA | Basic semantics yes: real `<button>`, not `<div onclick>`. |
+| `EventTarget` / pub-sub | Single pattern (direct coupling) across the codebase. Defendability over flexibility. |
+| Build HTML from JS | The brief forbids it. HTML5 `<template>` covers the DRY need. |
 
-## 13. Notas para la defensa presencial
+## 13. Notes for the in-person defense
 
-Para cada decisión grande del diseño hay una respuesta de una frase preparada:
+For each major design decision there is a one-sentence answer prepared:
 
-- **¿Por qué clases y no functional?** Modelado de dominio: edificio, elevador, botón, dispatcher. Cada uno tiene estado e identidad propios.
-- **¿Por qué Dispatcher central y no Elevators que se comunican entre sí?** Patrón Mediator. Evita que cada Elevator conozca a los demás. Una sola clase concentra la lógica de asignación.
-- **¿Por qué no Vuex/Pinia/store custom?** No hay estado global compartido entre vistas distintas. Son 5 entidades con su propio estado y un coordinador. Un store sería over-engineering.
-- **¿Por qué CSS transition y no rAF?** El browser lo manda al compositor y queda en la GPU. rAF tendría sentido si necesitara calcular cada frame; acá voy de A a B suavemente.
-- **¿Por qué `performance.now()`?** API monotónica, no salta con cambios de reloj, precisión sub-milisegundo.
-- **¿Por qué FIFO y no más-cercano-en-la-cola?** Para evitar starvation. "No perder llamadas" implica respetar orden de llegada.
-- **¿Por qué `<template>` y no `createElement` ni innerHTML?** Consigna lo pide. `<template>` mantiene el markup en HTML, JS solo clona.
-- **¿Cómo testearías el Elevator solo?** Mock del Dispatcher con métodos `onArrival` y `onIdle`. Es DI por constructor.
-- **¿Cómo agregarías Shabat / vuelve-a-PB / botón ON-OFF?** Ver §11. Cada una entra con cambio local.
+- **Why classes and not functional?** Domain modeling: building, elevator, button, dispatcher. Each has its own state and identity.
+- **Why a central Dispatcher and not Elevators that talk to each other?** Mediator pattern. Avoids each Elevator knowing the others. One class concentrates the assignment logic.
+- **Why no Vuex/Pinia/custom store?** There is no global state shared between distinct views. There are 5 entities with their own state and a coordinator. A store would be over-engineering.
+- **Why CSS transition and not rAF?** The browser sends it to the compositor and it runs on the GPU. rAF would make sense if I needed per-frame computation; here I go from A to B smoothly.
+- **Why `performance.now()`?** Monotonic API, doesn't jump with clock changes, sub-millisecond precision.
+- **Why FIFO and not closest-in-the-queue?** To avoid starvation. "No calls dropped" implies respecting arrival order.
+- **Why `<template>` and not `createElement` nor innerHTML?** The brief asks for it. `<template>` keeps the markup in HTML; JS only clones.
+- **How would you test the Elevator alone?** A Dispatcher mock with `onArrival` and `onIdle` methods. DI by constructor.
+- **How would you add Shabbat / return-to-Ground / ON-OFF button?** See §11. Each lands with a local change.
