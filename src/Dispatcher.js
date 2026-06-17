@@ -7,7 +7,7 @@ export class Dispatcher {
     this.buttons = [];
     this.queue = [];
     this.activeCalls = new Map();
-    this.ding = new Audio('/ding.wav');
+    this.ding = new Audio(`${import.meta.env.BASE_URL}ding.wav`);
     this._startTicker();
   }
 
