@@ -20,14 +20,17 @@ Single-page elevator system.
 - FIFO queue when all elevators are busy (no calls dropped).
 - Display of the caller's wait time, live during `waiting`, frozen during `arrived`.
 
-**Out of V1 scope:** automated tests, TypeScript, SCAN/LOOK algorithm, dynamic reassignment, persistence, exhaustive ARIA. The future features described in §11 are designed as hooks but not implemented.
+**In V1 scope** (in addition to the above): a focused unit-test suite covering the time formatter (`formatTime`) and the closest-elevator algorithm (`pickClosest`). Basic accessibility: real `<button>` elements with `aria-label`, `aria-live` on the time cells, `disabled` on buttons while a call is in flight.
+
+**Out of V1 scope:** integration/E2E tests, TypeScript, SCAN/LOOK algorithm, dynamic reassignment, persistence, exhaustive ARIA. The future features described in §11 are sketched at the design level but no code hooks are pre-installed (YAGNI).
 
 ## 2. Stack
 
 - **Vanilla JS** (native ES modules, no frameworks).
 - **SCSS** with BEM methodology.
 - **Vite** as dev server and SCSS compiler.
-- **No external libraries** except Vite (dev-only).
+- **Vitest** for focused unit tests (dev-only).
+- **No runtime libraries** — the production bundle contains only the project's own JS and CSS.
 
 Rationale: the brief asks for Vanilla. SCSS is suggested by the brief and familiar to the author from Vue. Vite is the standard tool in the Vue ecosystem, has minimal setup, and only adds SCSS compilation and a dev server.
 
@@ -35,51 +38,70 @@ Rationale: the brief asks for Vanilla. SCSS is suggested by the brief and famili
 
 ```
 elevators/
-├── index.html              # root markup + <template> for floor and elevator
+├── index.html              # root markup + <template>s for shaft, time-cell, call-row, floor-label
 ├── package.json
 ├── vite.config.js
+├── vitest.config.js
 ├── public/
-│   ├── elevator.svg        # provided by the brief (Google Drive)
-│   └── ding.wav            # short arrival sound
+│   ├── ding.wav            # short arrival sound (freesound.org)
+│   └── favicon.svg         # elevator-buttons favicon
 └── src/
     ├── main.js             # entry point
     ├── config.js           # constants
-    ├── Building.js         # bootstrap + wiring
-    ├── Dispatcher.js       # queue + algorithm
-    ├── Elevator.js         # lifecycle + movement
-    ├── CallButton.js       # button UI
+    ├── algorithm.js        # pure functions (pickClosest)
+    ├── Building.js         # bootstrap + wiring + DOM scaffolding
+    ├── Dispatcher.js       # queue + algorithm + audio + live timer
+    ├── Elevator.js         # lifecycle + movement + trip-time measurement
+    ├── CallButton.js       # button UI + state + time display
     ├── format.js           # ms → "5 sec" / "1 min. 30 sec."
     └── styles/
         ├── main.scss       # @use of partials
         ├── _variables.scss # colors, dims, --floor-height (custom property)
-        ├── _layout.scss    # .building, columns
+        ├── _layout.scss    # .building, columns, title, responsive
         ├── _floors.scss    # .floor-label
-        ├── _elevator.scss  # .shaft + .shaft__elevator + states
+        ├── _elevator.scss  # .shaft (with grid lines) + .shaft__elevator + states
+        ├── _times.scss     # .time-cell (per-floor time display)
         └── _button.scss    # .call-row + .call-button + states
+
+test/
+├── format.test.js
+└── algorithm.test.js
 ```
 
 **Decision: flat structure, no `core/` or `ui/`.** With 6 JS files, grouping into folders is over-engineering. The filename is the responsibility.
 
 ## 4. Markup strategy
 
-HTML is not built from JS. The `index.html` contains the HTML5 `<template>` elements that define the markup for each row type. In `main.js`, on startup, templates are cloned N times.
+Visible markup lives in HTML, not in JS. The `index.html` contains:
+
+- The static skeleton: `<h1>`, the empty `<div class="building">`.
+- Four `<template>` elements for the repeating row types: `floor-label`, `shaft` (with the SVG inlined for color control via `currentColor`), `time-cell`, `call-row`.
 
 ```html
-<template id="elevator-template">
-  <div class="shaft__elevator">
-    <img src="/elevator.svg" alt="">
+<template id="shaft-template">
+  <div class="shaft">
+    <div class="shaft__elevator shaft__elevator--idle">
+      <svg fill="currentColor" ...>...</svg>
+    </div>
   </div>
+</template>
+
+<template id="time-cell-template">
+  <div class="time-cell" aria-live="polite"></div>
 </template>
 
 <template id="call-row-template">
   <div class="call-row">
-    <span class="call-row__time"></span>
-    <button class="call-button">Call</button>
+    <button type="button" class="call-button call-button--call">Call</button>
   </div>
 </template>
 ```
 
-**Rationale:** the brief's explicit *"No need to build the HTML in JS"* is honored because the markup lives in HTML (`<template>`). JS only calls `template.content.cloneNode(true)`. Changing the number of floors or elevators is a single constant change, not editing 50 lines of HTML.
+In `Building._buildDom()`, JS:
+- Clones the templates N times to fill the columns.
+- Creates three thin container `div`s (`.building__labels`, `.building__shafts`, `.building__times`, `.building__calls`) with `document.createElement` — minimal scaffolding so the cloned children have a parent to live in. No content markup is built from JS.
+
+**Rationale:** the brief's *"No need to build the HTML in JS"* is honored because all visible row markup lives in HTML templates. The four container divs are pure structural scaffolding (no labels, no copy, no SVG). Changing the number of floors or elevators is a one-line constant change.
 
 ## 5. Architecture: 4 classes + 1 pattern
 
@@ -95,30 +117,29 @@ Rationale: a single pattern across the codebase. Defensible in one sentence: *"e
 |---|---|---|
 | `Building` | (none; receives the root DOM) | Instantiates Dispatcher, Elevators, CallButtons. Wires references. It is the bootstrap. |
 | `Dispatcher` | (empty at construction; `setActors` afterward) | The system's brain. Receives calls, assigns by proximity, queues if no idle elevators. Coordinates arrivals/idles. Plays the ding. Updates buttons' visual state. Holds the global `setInterval` that refreshes on-screen times. |
-| `Elevator` | `id`, `dispatcher`, `config = {}` | Domain entity. Holds `currentFloor` and `state` (`idle`/`moving`/`arrived`). Executes movement via CSS transition. Measures time with `performance.now()`. Notifies the dispatcher on `onArrival` and `onIdle`. The `config` parameter is an optional object; in V1 it has no used keys, but it's present as a hook for V2 (see §11). |
-| `CallButton` | `floor`, `dispatcher`, `element` (DOM) | Button UI. Captures clicks → `dispatcher.requestElevator(floor)`. The `setState(state, timeText)` method updates CSS classes and text. |
+| `Elevator` | `id`, `dispatcher` | Domain entity. Holds `currentFloor` and `state` (`idle`/`moving`/`arrived`). Executes movement via CSS transition. Measures trip duration with `performance.now()` and passes it to `dispatcher.onArrival(this, durationMs)`. |
+| `CallButton` | `floor`, `dispatcher`, `buttonElement`, `timeElement` | UI for one floor. Captures clicks → `dispatcher.requestElevator(floor)`. Exposes `setState(state)` (changes class, label, `disabled`, and clears the time when state is `call`) and `setTime(text)` (updates the per-floor time cell). Owns its own DOM access; the Dispatcher never touches the elements directly. |
 
 ### 5.3. Wiring in `Building`
 
 ```js
 class Building {
-  constructor(root) {
-    this.root = root;
+  constructor(rootElement) {
+    this.root = rootElement;
     this.dispatcher = new Dispatcher();
+    this.elevators = [];
+    this.buttons = [];
 
-    this.elevators = Array.from({length: ELEVATORS}, (_, i) =>
-      new Elevator(i, this.dispatcher, {})
-    );
-
-    this.buttons = Array.from({length: FLOORS}, (_, floor) => {
-      const element = cloneTemplate('call-row-template');
-      return new CallButton(floor, this.dispatcher, element);
-    });
-
+    this._buildDom();
     this.dispatcher.setActors(this.elevators, this.buttons);
+  }
 
-    // append to root
-    this.mount();
+  _buildDom() {
+    // Create the four column containers, fill them by cloning templates per floor /
+    // per elevator, then append everything to the root.
+    // For each floor: a label, a time cell, a call-row; the button + time cell are
+    // handed to a CallButton instance.
+    // For each elevator: a shaft; the shaft DOM is later passed to elevator.attach().
   }
 }
 ```
@@ -159,13 +180,14 @@ An elevator is a candidate for a new call **only when it is `idle`**. The 2 seco
 
 ### 6.3. When an elevator arrives (`onArrival(elevator, durationMs)`)
 
-The Elevator has already changed its own state to `arrived` before notifying (see §7.1). The Dispatcher only coordinates the external effects.
+The Elevator has already changed its own state to `arrived` before notifying (see §7.1). The Dispatcher coordinates the external effects and shows the **trip duration** the Elevator just reported.
 
 ```
 1. floor = activeCalls.get(elevator).floor.
 2. Play ding (currentTime = 0; play()).
-3. button[floor].setState('arrived', formatTime(now - startTime)).
-4. elevator.rest() → the Elevator starts its setTimeout(REST_MS) and will notify onIdle when it expires.
+3. button[floor].setState('arrived')             // visual state, also disables the button.
+4. button[floor].setTime(formatTime(durationMs)) // the actual time the elevator took to get here.
+5. elevator.rest() → the Elevator starts its setTimeout(REST_MS) and will notify onIdle when it expires.
 ```
 
 ### 6.4. When an elevator becomes idle (`onIdle(elevator)`)
@@ -250,21 +272,25 @@ this.floorHeightPx = parseFloat(v);
 
 A single source of truth. If the SCSS is modified, JS picks it up on startup.
 
-## 8. Wait time display
+## 8. Time display
 
 ### 8.1. Semantics
 
-The number shown next to the button is **the time elapsed since Call was pressed**, not the elevator's travel time.
+A single `.time-cell` per floor lives in a dedicated column between the shafts and the call buttons. Its content depends on the call's state, with two distinct semantics intentionally compressed into one display:
 
-| Button state | Text in `.call-row__time` |
+| Button state | What the time cell shows |
 |---|---|
 | `call` | empty |
-| `waiting` | time since startTime, updated every 1000ms |
-| `arrived` | final time frozen |
+| `waiting` (or queued) | live counter of elapsed wait time since the user pressed Call (updated every 1000ms) |
+| `arrived` | the elevator's **trip duration** — `durationMs` measured by the Elevator with `performance.now()`. Frozen for the 2s rest. |
+
+This satisfies both the brief's literal requirement (*"Measure the time it took the elevator to reach the designated floor"* — shown on arrival) and the mockup (which shows live elapsed time on `waiting` rows).
 
 ### 8.2. Implementation
 
-A single global `setInterval(1000)` lives in the `Dispatcher`. On each tick it iterates `activeCalls` and, for each call in `waiting` state, updates the corresponding floor's text. Calls in `arrived` are not touched (they remain frozen with the previous value).
+A single global `setInterval(TIME_REFRESH_MS)` lives in the `Dispatcher` (id stored as `_tickerId`, cleared by `destroy()`). On each tick it iterates `activeCalls` and the `queue` and calls `button.setTime(formatTime(...))` for floors whose elevator is `moving` or whose call is still queued. Calls in `arrived` are not touched (they keep the trip duration written by `onArrival`).
+
+The Dispatcher never accesses the time DOM element directly — it goes through `CallButton.setTime()`. The encapsulation of the CallButton's DOM is preserved.
 
 ### 8.3. Format
 
@@ -273,38 +299,51 @@ A single global `setInterval(1000)` lives in the `Dispatcher`. On each tick it i
 - `< 60_000`: `"5 sec"`, `"42 sec"`.
 - `>= 60_000`: `"1 min. 30 sec."`.
 
+Truncation uses `Math.floor` (a stopwatch-like display).
+
 ## 9. Layout and SCSS
 
 ### 9.1. DOM
 
 ```html
-<div class="building">
-  <div class="building__labels">
-    <div class="floor-label">9th</div>
-    ...
-    <div class="floor-label">Ground</div>
-  </div>
-
-  <div class="building__shafts">
-    <div class="shaft" data-elevator-id="0">
-      <div class="shaft__elevator shaft__elevator--idle"><img src="elevator.svg"></div>
+<main id="app">
+  <h1 class="app-title">Elevator Exercise</h1>
+  <div class="building">
+    <div class="building__labels">       <!-- floor names "9th" ... "Ground" -->
+      <div class="floor-label">9th</div>
+      ...
+      <div class="floor-label">Ground</div>
     </div>
-    <!-- × ELEVATORS -->
-  </div>
 
-  <div class="building__calls">
-    <div class="call-row" data-floor="9">
-      <span class="call-row__time"></span>
-      <button class="call-button call-button--call">Call</button>
+    <div class="building__shafts">       <!-- 5 vertical shafts -->
+      <div class="shaft" data-elevator-id="0">
+        <div class="shaft__elevator shaft__elevator--idle">
+          <svg fill="currentColor">...</svg>
+        </div>
+      </div>
+      <!-- × ELEVATORS -->
     </div>
-    <!-- × FLOORS -->
+
+    <div class="building__times">        <!-- per-floor time cells -->
+      <div class="time-cell" data-floor="9" aria-live="polite"></div>
+      ...
+    </div>
+
+    <div class="building__calls">        <!-- per-floor call buttons -->
+      <div class="call-row" data-floor="9">
+        <button class="call-button call-button--call" aria-label="Call elevator to floor 9">Call</button>
+      </div>
+      <!-- × FLOORS -->
+    </div>
   </div>
-</div>
+</main>
 ```
 
-- `.building`: `display: flex` horizontal.
-- `.shaft`: `position: relative`; height `calc(var(--floor-height) * 10)`.
+- `.building`: `display: flex` horizontal with four columns: labels, shafts, times, calls.
+- `.building__labels`, `.building__times`, `.building__calls`: `flex-direction: column-reverse` so floor 0 renders at the bottom while iterating data 0..9.
+- `.shaft`: `position: relative`; height `calc(var(--floor-height) * 10)`. Background is a `repeating-linear-gradient` that draws a horizontal hair-line at each floor boundary, matching the mockup.
 - `.shaft__elevator`: `position: absolute; bottom: 0`; moves with `transform: translateY(...)`.
+- Responsive: a `@media (max-width: 640px)` block in `_layout.scss` shrinks `--floor-height`, `--shaft-width` and column widths so the building fits on phones without overflow.
 
 ### 9.2. SCSS per component (BEM)
 
@@ -312,10 +351,11 @@ One partial per component. Each partial declares its BEM block and its modifiers
 
 ```
 main.scss
-├── @use 'variables' as *;
+├── @use 'variables';
 ├── @use 'layout';
 ├── @use 'floors';
 ├── @use 'elevator';
+├── @use 'times';
 └── @use 'button';
 ```
 
@@ -324,7 +364,7 @@ main.scss
 - `.shaft__elevator--idle`, `.shaft__elevator--moving`, `.shaft__elevator--arrived`.
 - `.call-button--call`, `.call-button--waiting`, `.call-button--arrived`.
 
-JS only calls `classList.add/remove`. Styling lives 100% in SCSS.
+JS only calls `classList.add/remove` and sets `textContent`. Styling lives 100% in SCSS.
 
 ### 9.3. Variables
 
@@ -336,12 +376,18 @@ JS only calls `classList.add/remove`. Styling lives 100% in SCSS.
 
 ```js
 // In Dispatcher.constructor():
-this.ding = new Audio('/ding.wav');
+this.ding = typeof Audio === 'undefined'
+  ? null
+  : new Audio(`${import.meta.env.BASE_URL}ding.wav`);
 
-// In onArrival:
-this.ding.currentTime = 0;
-this.ding.play();
+// In onArrival → _playDing():
+if (this.ding) {
+  this.ding.currentTime = 0;
+  this.ding.play().catch(() => {});
+}
 ```
+
+Using `import.meta.env.BASE_URL` makes the asset path correct both in dev (`/`) and when the bundle is deployed to a subpath like `/origami/v1/`. The `typeof Audio === 'undefined'` guard makes the Dispatcher constructible in Node (Vitest) without mocking Audio.
 
 - **`HTMLAudioElement`** and not Web Audio API: WAA is for processing; here we only play a sound file.
 - **`currentTime = 0`** before `play()`: if the ding is playing and another elevator arrives, without reset the second `play()` is a no-op.
@@ -349,46 +395,41 @@ this.ding.play();
 
 **Honest limitation to have ready for the defense:** two nearly simultaneous arrivals overlap and clip each other's sound. If it were a real requirement, an `Audio` pool or WAA would be used. For this exercise it's unnecessary.
 
-## 11. Documented hooks for V2
+## 11. Sketches for V2 (no code preinstalled — YAGNI)
 
-These features are not implemented in V1 but the design leaves room for them to land with local changes.
+These features are not implemented in V1 and **no hooks are preinstalled in the codebase** (no unused `config` parameter, no dormant flags). Each one is sketched here so the future implementation has a starting point.
 
 ### 11.1. Shabbat elevator
 
 **Behavior:** does not respond to calls; ignored by the Dispatcher.
 
-**Hook:** the Elevator's `config` parameter (already present in V1, see §5.2) gains the key `acceptsDispatch: boolean` with default `true`. The Dispatcher, when filtering candidates in §6.2 step 3, discards those with `acceptsDispatch === false`. A Shabbat elevator is constructed with `{ acceptsDispatch: false }`.
-
-**Change to implement it:** one line in the Dispatcher filter + parameterize the config.
+**Change to implement it:** add an `acceptsDispatch` boolean to `Elevator` (constructor param with default `true`). In `Dispatcher.requestElevator` step 3, filter idle elevators by `acceptsDispatch === true`. A Shabbat elevator is constructed with `acceptsDispatch: false`. Estimated change: ~3 lines.
 
 ### 11.2. ON/OFF button per column
 
 **Behavior:** below each shaft, a button toggles the elevator "out of the pool" or "back into the pool."
 
-**Hook:** reuses `acceptsDispatch`. A UI control calls `elevator.setAvailability(boolean)`, which updates the flag and triggers a visual CSS class.
-
-**Change to implement it:** new method on `Elevator`, new button in the template, listener in `Building`. Dispatcher untouched.
+**Change to implement it:** reuse the same `acceptsDispatch` flag from §11.1, expose `elevator.setAvailability(boolean)` to flip it, add a new template `<template id="shaft-toggle-template">` and wire it in `Building`. Dispatcher untouched.
 
 ### 11.3. Return to Ground after N idle seconds
 
 **Behavior:** configurable per elevator. When entering `idle`, if no one calls it within N seconds, it travels by itself to Ground Floor (floor 0).
 
-**Hook:** `Elevator.config.returnToGround = { enabled: boolean, idleSeconds: number }`. In `Elevator.onIdle()` (after notifying the dispatcher) start a `setTimeout(N * 1000)`. If a `goTo` arrives before it fires, cancel it. If it fires and the elevator is still `idle`, run `this.goTo(0)`.
-
-**Change to implement it:** `setTimeout` logic with cancellation in `Elevator`, Dispatcher untouched.
+**Change to implement it:** add a constructor parameter `returnToGround = { enabled, idleSeconds }` to `Elevator`. In `Elevator.rest()` (the path that turns `arrived` → `idle`), if enabled, after the dispatcher's `onIdle` returns and the elevator stays idle, start a `setTimeout`. If a `goTo` arrives before it fires, cancel it. If it fires and the elevator is still `idle`, run `this.goTo(0)`.
 
 ## 12. Explicit "do not" decisions
 
 | Not doing | Why |
 |---|---|
-| Automated tests | The point of the exercise is design clarity. With 4 classes and a linear flow the ROI is low and it adds surface area to defend. |
+| Full integration / E2E test suite | The focused unit tests in V1 cover the pure logic (formatter, algorithm). DOM/audio integration tests have lower ROI for this scope. |
 | TypeScript | The brief asks for Vanilla JS. |
 | SCAN/LOOK algorithm | The brief asks for "closest", not directional optimization. |
 | Dynamic reassignment | Once assigned, no reassignment. Simpler, sufficient. |
 | Persistence | Not requested. |
-| Exhaustive ARIA | Basic semantics yes: real `<button>`, not `<div onclick>`. |
+| Exhaustive ARIA | Basic accessibility in V1: real `<button>`, `aria-label` with floor name, `aria-live` on time cells, `disabled` while a call is in flight. |
 | `EventTarget` / pub-sub | Single pattern (direct coupling) across the codebase. Defendability over flexibility. |
-| Build HTML from JS | The brief forbids it. HTML5 `<template>` covers the DRY need. |
+| Build HTML from JS | The brief forbids it. HTML5 `<template>` covers the DRY need; container divs are scaffolding only. |
+| Preinstalled hooks for V2 | YAGNI. The Elevator constructor has no `config` parameter today. When a V2 feature lands, the change is local and explicit (see §11). |
 
 ## 13. Notes for the in-person defense
 
@@ -401,5 +442,7 @@ For each major design decision there is a one-sentence answer prepared:
 - **Why `performance.now()`?** Monotonic API, doesn't jump with clock changes, sub-millisecond precision.
 - **Why FIFO and not closest-in-the-queue?** To avoid starvation. "No calls dropped" implies respecting arrival order.
 - **Why `<template>` and not `createElement` nor innerHTML?** The brief asks for it. `<template>` keeps the markup in HTML; JS only clones.
-- **How would you test the Elevator alone?** A Dispatcher mock with `onArrival` and `onIdle` methods. DI by constructor.
-- **How would you add Shabbat / return-to-Ground / ON-OFF button?** See §11. Each lands with a local change.
+- **How would you test the Elevator alone?** A Dispatcher mock with `onArrival` and `onIdle` methods. DI by constructor. (The current unit tests cover pure logic — `formatTime` and `pickClosest` — without DOM.)
+- **How would you add Shabbat / return-to-Ground / ON-OFF button?** See §11. Each lands with a local, explicit change; no hooks reserved upfront.
+- **Why does the time cell show two different things (wait vs trip)?** See §8.1. The brief asks for trip duration; the mockup shows live wait. Same display, distinct semantics by state — both requirements satisfied.
+- **Why does the Dispatcher use `import.meta.env.BASE_URL` for the audio path?** Because the bundle can be deployed to a subpath (e.g. `/origami/v1/`). A hard-coded `/ding.wav` would 404 in that case.
