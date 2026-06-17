@@ -1,4 +1,5 @@
 import { formatTime } from './format.js';
+import { TIME_REFRESH_MS } from './config.js';
 
 export class Dispatcher {
   constructor() {
@@ -6,6 +7,7 @@ export class Dispatcher {
     this.buttons = [];
     this.queue = [];
     this.activeCalls = new Map();
+    this._startTicker();
   }
 
   setActors(elevators, buttons) {
@@ -66,5 +68,21 @@ export class Dispatcher {
       }
     }
     return best;
+  }
+
+  _startTicker() {
+    setInterval(() => this._tick(), TIME_REFRESH_MS);
+  }
+
+  _tick() {
+    const now = performance.now();
+    for (const [elevator, call] of this.activeCalls) {
+      if (elevator.state === 'moving') {
+        this.buttons[call.floor].timeEl.textContent = formatTime(now - call.startTime);
+      }
+    }
+    for (const call of this.queue) {
+      this.buttons[call.floor].timeEl.textContent = formatTime(now - call.startTime);
+    }
   }
 }
