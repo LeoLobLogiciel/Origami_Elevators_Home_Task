@@ -1,5 +1,6 @@
 import { formatTime } from './format.js';
 import { TIME_REFRESH_MS } from './config.js';
+import { pickClosest } from './algorithm.js';
 
 export class Dispatcher {
   constructor() {
@@ -7,8 +8,15 @@ export class Dispatcher {
     this.buttons = [];
     this.queue = [];
     this.activeCalls = new Map();
-    this.ding = new Audio(`${import.meta.env.BASE_URL}ding.wav`);
-    this._startTicker();
+    this.ding = this._loadDing();
+    this._tickerId = setInterval(() => this._tick(), TIME_REFRESH_MS);
+  }
+
+  destroy() {
+    if (this._tickerId !== null) {
+      clearInterval(this._tickerId);
+      this._tickerId = null;
+    }
   }
 
   setActors(elevators, buttons) {
@@ -17,8 +25,7 @@ export class Dispatcher {
   }
 
   requestElevator(floor) {
-    if (this.buttons[floor].state === 'waiting') return;
-    if (this.buttons[floor].state === 'arrived') return;
+    if (this.buttons[floor].state !== 'call') return;
 
     const startTime = performance.now();
     this.buttons[floor].setState('waiting');
@@ -29,7 +36,7 @@ export class Dispatcher {
       return;
     }
 
-    const closest = this._pickClosest(idle, floor);
+    const closest = pickClosest(idle, floor);
     this.activeCalls.set(closest, { floor, startTime });
     closest.goTo(floor);
   }
@@ -39,10 +46,9 @@ export class Dispatcher {
     if (!call) {
       throw new Error(`Dispatcher: arrival from elevator ${elevator.id} with no active call`);
     }
-    this.ding.currentTime = 0;
-    this.ding.play().catch(() => {});
-    const elapsed = performance.now() - call.startTime;
-    this.buttons[call.floor].setState('arrived', formatTime(elapsed));
+    this._playDing();
+    this.buttons[call.floor].setState('arrived');
+    this.buttons[call.floor].setTime(formatTime(durationMs));
     elevator.rest();
   }
 
@@ -60,32 +66,26 @@ export class Dispatcher {
     }
   }
 
-  _pickClosest(elevators, floor) {
-    let best = elevators[0];
-    let bestDist = Math.abs(best.currentFloor - floor);
-    for (let i = 1; i < elevators.length; i++) {
-      const d = Math.abs(elevators[i].currentFloor - floor);
-      if (d < bestDist) {
-        best = elevators[i];
-        bestDist = d;
-      }
-    }
-    return best;
-  }
-
-  _startTicker() {
-    setInterval(() => this._tick(), TIME_REFRESH_MS);
-  }
-
   _tick() {
     const now = performance.now();
     for (const [elevator, call] of this.activeCalls) {
       if (elevator.state === 'moving') {
-        this.buttons[call.floor].timeEl.textContent = formatTime(now - call.startTime);
+        this.buttons[call.floor].setTime(formatTime(now - call.startTime));
       }
     }
     for (const call of this.queue) {
-      this.buttons[call.floor].timeEl.textContent = formatTime(now - call.startTime);
+      this.buttons[call.floor].setTime(formatTime(now - call.startTime));
     }
+  }
+
+  _loadDing() {
+    if (typeof Audio === 'undefined') return null;
+    return new Audio(`${import.meta.env.BASE_URL}ding.wav`);
+  }
+
+  _playDing() {
+    if (!this.ding) return;
+    this.ding.currentTime = 0;
+    this.ding.play().catch(() => {});
   }
 }

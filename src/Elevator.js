@@ -3,10 +3,9 @@ import { FLOOR_DURATION_MS, REST_MS } from './config.js';
 const STATES = ['idle', 'moving', 'arrived'];
 
 export class Elevator {
-  constructor(id, dispatcher, config = {}) {
+  constructor(id, dispatcher) {
     this.id = id;
     this.dispatcher = dispatcher;
-    this.config = config;
 
     this.currentFloor = 0;
     this.state = 'idle';
