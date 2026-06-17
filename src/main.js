@@ -1,5 +1,6 @@
 import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
+import { CallButton } from './CallButton.js';
 
 function cloneTemplate(id) {
   const tpl = document.getElementById(id);
@@ -21,38 +22,45 @@ function floorName(f) {
   return f === 0 ? 'Ground' : `${f}${ordinalSuffix(f)}`;
 }
 
-function renderSkeleton(rootSelector) {
-  const root = document.querySelector(rootSelector);
+const root = document.querySelector('.building');
 
-  const labels = document.createElement('div');
-  labels.className = 'building__labels';
+const labels = document.createElement('div');
+labels.className = 'building__labels';
 
-  const shafts = document.createElement('div');
-  shafts.className = 'building__shafts';
+const shafts = document.createElement('div');
+shafts.className = 'building__shafts';
 
-  const calls = document.createElement('div');
-  calls.className = 'building__calls';
+const calls = document.createElement('div');
+calls.className = 'building__calls';
 
-  for (let f = 0; f < FLOORS; f++) {
-    const label = cloneTemplate('floor-label-template');
-    label.textContent = floorName(f);
-    labels.appendChild(label);
+const buttons = [];
 
-    const callRow = cloneTemplate('call-row-template');
-    callRow.dataset.floor = String(f);
-    calls.appendChild(callRow);
+const fakeDispatcher = {
+  requestElevator(floor) {
+    console.log('requestElevator', floor);
+    const next = { call: 'waiting', waiting: 'arrived', arrived: 'call' }[buttons[floor].state];
+    buttons[floor].setState(next, next === 'arrived' ? '3 sec' : '');
   }
+};
 
-  for (let i = 0; i < ELEVATORS; i++) {
-    const shaft = cloneTemplate('shaft-template');
-    shaft.dataset.elevatorId = String(i);
-    shaft.querySelector('.shaft__id').textContent = `#${i + 1}`;
-    shafts.appendChild(shaft);
-  }
+for (let f = 0; f < FLOORS; f++) {
+  const label = cloneTemplate('floor-label-template');
+  label.textContent = floorName(f);
+  labels.appendChild(label);
 
-  root.appendChild(labels);
-  root.appendChild(shafts);
-  root.appendChild(calls);
+  const callRow = cloneTemplate('call-row-template');
+  callRow.dataset.floor = String(f);
+  calls.appendChild(callRow);
+  buttons[f] = new CallButton(f, fakeDispatcher, callRow);
 }
 
-renderSkeleton('.building');
+for (let i = 0; i < ELEVATORS; i++) {
+  const shaft = cloneTemplate('shaft-template');
+  shaft.dataset.elevatorId = String(i);
+  shaft.querySelector('.shaft__id').textContent = `#${i + 1}`;
+  shafts.appendChild(shaft);
+}
+
+root.appendChild(labels);
+root.appendChild(shafts);
+root.appendChild(calls);
