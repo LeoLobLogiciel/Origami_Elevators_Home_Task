@@ -1,6 +1,7 @@
 import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
 import { CallButton } from './CallButton.js';
+import { Elevator } from './Elevator.js';
 
 function cloneTemplate(id) {
   const tpl = document.getElementById(id);
@@ -23,23 +24,32 @@ function floorName(f) {
 }
 
 const root = document.querySelector('.building');
+const labels = document.createElement('div'); labels.className = 'building__labels';
+const shafts = document.createElement('div'); shafts.className = 'building__shafts';
+const calls  = document.createElement('div'); calls.className  = 'building__calls';
 
-const labels = document.createElement('div');
-labels.className = 'building__labels';
-
-const shafts = document.createElement('div');
-shafts.className = 'building__shafts';
-
-const calls = document.createElement('div');
-calls.className = 'building__calls';
-
+const elevators = [];
 const buttons = [];
 
 const fakeDispatcher = {
+  _activeFloor: null,
+  _activeElev: null,
   requestElevator(floor) {
-    console.log('requestElevator', floor);
-    const next = { call: 'waiting', waiting: 'arrived', arrived: 'call' }[buttons[floor].state];
-    buttons[floor].setState(next, next === 'arrived' ? '3 sec' : '');
+    const elev = elevators.find(e => e.state === 'idle');
+    if (!elev) { console.log('no idle elevator'); return; }
+    buttons[floor].setState('waiting');
+    this._activeFloor = floor;
+    this._activeElev = elev;
+    elev.goTo(floor);
+  },
+  onArrival(elev, ms) {
+    console.log('arrived elevator', elev.id, 'in', Math.round(ms), 'ms');
+    buttons[this._activeFloor].setState('arrived', `${Math.round(ms / 1000)} sec`);
+    elev.rest();
+  },
+  onIdle(elev) {
+    console.log('idle elevator', elev.id);
+    buttons[this._activeFloor].setState('call');
   }
 };
 
@@ -59,8 +69,11 @@ for (let i = 0; i < ELEVATORS; i++) {
   shaft.dataset.elevatorId = String(i);
   shaft.querySelector('.shaft__id').textContent = `#${i + 1}`;
   shafts.appendChild(shaft);
+  elevators.push(new Elevator(i, fakeDispatcher));
 }
 
 root.appendChild(labels);
 root.appendChild(shafts);
 root.appendChild(calls);
+
+elevators.forEach((e, i) => e.attach(shafts.children[i]));
