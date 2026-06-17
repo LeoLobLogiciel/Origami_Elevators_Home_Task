@@ -4,11 +4,7 @@
   height: var(--floor-height);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-right: 8px;
-  border-top: 1px solid $color-grid-line;
-
-  &:last-child { border-top: none; }
+  justify-content: flex-start;
 }
 
 .call-button {

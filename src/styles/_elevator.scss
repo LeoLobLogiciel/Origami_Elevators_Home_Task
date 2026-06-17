@@ -12,18 +12,17 @@
     $color-grid-line calc(var(--floor-height) - 1px),
     $color-grid-line var(--floor-height)
   );
-
-  &:last-child { border-right: 1px solid $color-grid-line; }
+  overflow: hidden;
 }
 
 .shaft__elevator {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 40px;
-  height: calc(var(--floor-height) - 8px);
-  margin-left: -20px;
-  transform: translateY(0);
+  width: 36px;
+  height: calc(var(--floor-height) - 6px);
+  margin-left: -18px;
+  transform: translateY(calc(var(--floor, 0) * var(--floor-height) * -1));
   transition: transform var(--travel-duration, 0ms) ease-in-out;
 }
 

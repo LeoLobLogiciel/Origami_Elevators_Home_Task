@@ -20,7 +20,7 @@ function ordinalSuffix(n) {
 }
 
 function floorName(f) {
-  return f === 0 ? 'Ground' : `${f}${ordinalSuffix(f)}`;
+  return f === 0 ? 'Ground Floor' : `${f}${ordinalSuffix(f)}`;
 }
 
 export class Building {
@@ -37,8 +37,20 @@ export class Building {
   _buildDom() {
     const labels = document.createElement('div'); labels.className = 'building__labels';
     const shafts = document.createElement('div'); shafts.className = 'building__shafts';
-    const times  = document.createElement('div'); times.className  = 'building__times';
     const calls  = document.createElement('div'); calls.className  = 'building__calls';
+
+    const shaftElements = [];
+    for (let i = 0; i < ELEVATORS; i++) {
+      const shaft = cloneTemplate('shaft-template');
+      shaft.dataset.elevatorId = String(i);
+      shafts.appendChild(shaft);
+      shaftElements.push(shaft);
+      this.elevators.push(new Elevator(i, this.dispatcher));
+    }
+
+    const timesOverlay = document.createElement('div');
+    timesOverlay.className = 'building__times-overlay';
+    shafts.appendChild(timesOverlay);
 
     for (let f = 0; f < FLOORS; f++) {
       const label = cloneTemplate('floor-label-template');
@@ -47,7 +59,7 @@ export class Building {
 
       const timeCell = cloneTemplate('time-cell-template');
       timeCell.dataset.floor = String(f);
-      times.appendChild(timeCell);
+      timesOverlay.appendChild(timeCell);
 
       const callRow = cloneTemplate('call-row-template');
       callRow.dataset.floor = String(f);
@@ -57,18 +69,10 @@ export class Building {
       this.buttons[f] = new CallButton(f, this.dispatcher, buttonEl, timeCell);
     }
 
-    for (let i = 0; i < ELEVATORS; i++) {
-      const shaft = cloneTemplate('shaft-template');
-      shaft.dataset.elevatorId = String(i);
-      shafts.appendChild(shaft);
-      this.elevators.push(new Elevator(i, this.dispatcher));
-    }
-
     this.root.appendChild(labels);
     this.root.appendChild(shafts);
-    this.root.appendChild(times);
     this.root.appendChild(calls);
 
-    this.elevators.forEach((e, i) => e.attach(shafts.children[i]));
+    this.elevators.forEach((e, i) => e.attach(shaftElements[i]));
   }
 }

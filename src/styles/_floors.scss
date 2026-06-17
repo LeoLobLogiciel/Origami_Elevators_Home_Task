@@ -5,10 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 8px;
+  padding-right: 0;
   color: #555;
   font-size: 12px;
-  border-top: 1px solid $color-grid-line;
-
-  &:last-child { border-top: none; }
 }

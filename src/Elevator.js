@@ -10,16 +10,14 @@ export class Elevator {
     this.currentFloor = 0;
     this.state = 'idle';
     this.element = null;
-    this.floorHeightPx = 0;
   }
 
   attach(shaftElement) {
     this.shaft = shaftElement;
     this.element = shaftElement.querySelector('.shaft__elevator');
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--floor-height');
-    this.floorHeightPx = parseFloat(v);
+    this.element.style.setProperty('--travel-duration', '0ms');
+    this.element.style.setProperty('--floor', '0');
     this._applyStateClass();
-    this._applyTransform(0);
   }
 
   goTo(targetFloor) {
@@ -34,7 +32,7 @@ export class Elevator {
     this._applyStateClass();
 
     this.element.style.setProperty('--travel-duration', `${durationMs}ms`);
-    this._applyTransform(targetFloor);
+    this.element.style.setProperty('--floor', String(targetFloor));
 
     const onEnd = () => {
       const elapsedMs = performance.now() - start;
@@ -57,10 +55,6 @@ export class Elevator {
       this._applyStateClass();
       this.dispatcher.onIdle(this);
     }, REST_MS);
-  }
-
-  _applyTransform(floor) {
-    this.element.style.transform = `translateY(${-floor * this.floorHeightPx}px)`;
   }
 
   _applyStateClass() {

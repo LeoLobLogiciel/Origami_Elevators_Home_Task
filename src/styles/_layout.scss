@@ -31,34 +31,35 @@ body {
 .building {
   display: flex;
   align-items: stretch;
-  background: #ffffff;
-  border: 1px solid $color-grid-line;
-  padding: 16px;
+  gap: 12px;
 }
 
 .building__labels,
-.building__times,
 .building__calls {
   display: flex;
   flex-direction: column-reverse;
 }
 
 .building__labels { width: var(--label-width); }
-.building__shafts { display: flex; flex-direction: row; }
-.building__times  { width: var(--times-width); }
+.building__shafts {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  background: #ffffff;
+  border: 1px solid $color-grid-line;
+}
 .building__calls  { width: var(--calls-width); }
 
 @media (max-width: 640px) {
   :root {
     --floor-height: 36px;
     --shaft-width: 44px;
-    --label-width: 44px;
-    --times-width: 70px;
-    --calls-width: 84px;
+    --label-width: 64px;
+    --calls-width: 80px;
   }
 
   body { font-size: 12px; }
   .app-title { font-size: 15px; }
-  .building { padding: 10px; }
+  .building { gap: 8px; }
   #app { padding: 16px 8px; gap: 12px; }
 }

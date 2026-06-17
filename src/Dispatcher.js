@@ -38,6 +38,7 @@ export class Dispatcher {
 
     const closest = pickClosest(idle, floor);
     this.activeCalls.set(closest, { floor, startTime });
+    this.buttons[floor].setElevatorIndex(closest.id);
     closest.goTo(floor);
   }
 
@@ -62,6 +63,7 @@ export class Dispatcher {
     if (this.queue.length > 0) {
       const next = this.queue.shift();
       this.activeCalls.set(elevator, next);
+      this.buttons[next.floor].setElevatorIndex(elevator.id);
       elevator.goTo(next.floor);
     }
   }

@@ -14,7 +14,7 @@ export class CallButton {
     this.timeEl = timeElement;
 
     this.state = 'call';
-    const floorLabel = floor === 0 ? 'Ground' : `floor ${floor}`;
+    const floorLabel = floor === 0 ? 'Ground Floor' : `floor ${floor}`;
     this.button.setAttribute('aria-label', `Call elevator to ${floorLabel}`);
 
     this.button.addEventListener('click', () => {
@@ -34,10 +34,19 @@ export class CallButton {
 
     if (state === 'call') {
       this.setTime('');
+      this.timeEl.style.removeProperty('--shaft-index');
     }
   }
 
   setTime(text) {
     this.timeEl.textContent = text;
+  }
+
+  setElevatorIndex(index) {
+    if (index === null || index === undefined) {
+      this.timeEl.style.removeProperty('--shaft-index');
+    } else {
+      this.timeEl.style.setProperty('--shaft-index', String(index));
+    }
   }
 }
