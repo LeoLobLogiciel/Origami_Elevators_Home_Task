@@ -5,18 +5,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
   padding-right: 8px;
   border-top: 1px solid $color-grid-line;
 
   &:last-child { border-top: none; }
-}
-
-.call-row__time {
-  font-size: 12px;
-  color: #555;
-  min-width: 80px;
-  text-align: right;
 }
 
 .call-button {
@@ -28,6 +20,10 @@
   font-size: 12px;
   font-weight: 600;
   font-family: inherit;
+
+  &:disabled {
+    cursor: default;
+  }
 }
 
 .call-button--call    { background: $color-call;    color: $color-call-text; }

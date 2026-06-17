@@ -13,9 +13,19 @@ body {
 #app {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 32px 16px;
+  gap: 20px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #333;
 }
 
 .building {
@@ -23,11 +33,11 @@ body {
   align-items: stretch;
   background: #ffffff;
   border: 1px solid $color-grid-line;
-  padding: 36px 16px 16px;
+  padding: 16px;
 }
 
 .building__labels,
-.building__shafts,
+.building__times,
 .building__calls {
   display: flex;
   flex-direction: column-reverse;
@@ -35,4 +45,20 @@ body {
 
 .building__labels { width: var(--label-width); }
 .building__shafts { display: flex; flex-direction: row; }
+.building__times  { width: var(--times-width); }
 .building__calls  { width: var(--calls-width); }
+
+@media (max-width: 640px) {
+  :root {
+    --floor-height: 36px;
+    --shaft-width: 44px;
+    --label-width: 44px;
+    --times-width: 70px;
+    --calls-width: 84px;
+  }
+
+  body { font-size: 12px; }
+  .app-title { font-size: 15px; }
+  .building { padding: 10px; }
+  #app { padding: 16px 8px; gap: 12px; }
+}

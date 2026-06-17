@@ -5,19 +5,15 @@
   width: var(--shaft-width);
   height: calc(var(--floor-height) * 10);
   border-left: 1px solid $color-grid-line;
+  background-image: repeating-linear-gradient(
+    to top,
+    transparent 0,
+    transparent calc(var(--floor-height) - 1px),
+    $color-grid-line calc(var(--floor-height) - 1px),
+    $color-grid-line var(--floor-height)
+  );
 
   &:last-child { border-right: 1px solid $color-grid-line; }
-}
-
-.shaft__id {
-  position: absolute;
-  top: -22px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: #555;
 }
 
 .shaft__elevator {
