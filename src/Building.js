@@ -1,4 +1,4 @@
-import { FLOORS, ELEVATORS } from './config.js';
+import { config } from './config.js';
 import { CallButton } from './CallButton.js';
 import { Elevator } from './Elevator.js';
 import { Dispatcher } from './Dispatcher.js';
@@ -34,6 +34,16 @@ export class Building {
     this.dispatcher.setActors(this.elevators, this.buttons);
   }
 
+  rebuild() {
+    this.dispatcher.destroy();
+    this.root.replaceChildren();
+    this.dispatcher = new Dispatcher();
+    this.elevators = [];
+    this.buttons = [];
+    this._buildDom();
+    this.dispatcher.setActors(this.elevators, this.buttons);
+  }
+
   _buildDom() {
     const labels = document.createElement('div'); labels.className = 'building__labels';
     const shaftsArea = document.createElement('div'); shaftsArea.className = 'building__shafts-area';
@@ -46,7 +56,7 @@ export class Building {
 
     const shaftElements = [];
     const footerElements = [];
-    for (let i = 0; i < ELEVATORS; i++) {
+    for (let i = 0; i < config.ELEVATORS; i++) {
       const shaft = cloneTemplate('shaft-template');
       shaft.dataset.elevatorId = String(i);
       shafts.appendChild(shaft);
@@ -64,7 +74,7 @@ export class Building {
     timesOverlay.className = 'building__times-overlay';
     shafts.appendChild(timesOverlay);
 
-    for (let f = 0; f < FLOORS; f++) {
+    for (let f = 0; f < config.FLOORS; f++) {
       const label = cloneTemplate('floor-label-template');
       label.textContent = floorName(f);
       labels.appendChild(label);

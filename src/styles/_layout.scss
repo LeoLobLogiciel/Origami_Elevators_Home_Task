@@ -28,6 +28,17 @@ body {
   color: #333;
 }
 
+.app__main {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.app__sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
 .building {
   display: flex;
   align-items: flex-start;

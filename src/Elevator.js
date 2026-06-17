@@ -1,4 +1,4 @@
-import { FLOOR_DURATION_MS, REST_MS, FLOORS } from './config.js';
+import { config } from './config.js';
 
 const STATES = ['idle', 'moving', 'arrived'];
 const MODES = ['operational', 'shabbat', 'oos'];
@@ -81,6 +81,11 @@ export class Elevator {
     this._updateModeVisual();
     this._reflectModeInUi();
 
+    if (newMode !== 'operational') {
+      this.autoReturnEnabled = false;
+      if (this._autoReturnCheck) this._autoReturnCheck.checked = false;
+    }
+
     if (newMode === 'shabbat') {
       this._shabbatStep();
       return;
@@ -131,7 +136,7 @@ export class Elevator {
     this._cancelAutoReturnTimer();
 
     const distance = Math.abs(targetFloor - this.currentFloor);
-    const durationMs = distance * FLOOR_DURATION_MS;
+    const durationMs = distance * config.FLOOR_DURATION_MS;
     const start = performance.now();
     const silent = !!opts.silent;
     const shabbat = !!opts.shabbat;
@@ -153,7 +158,7 @@ export class Elevator {
           this.state = 'idle';
           this._applyStateClass();
           this._afterInternalTrip({ shabbat });
-        }, REST_MS);
+        }, config.REST_MS);
       } else {
         this.dispatcher.onArrival(this, elapsedMs);
       }
@@ -182,7 +187,7 @@ export class Elevator {
       if (this.state === 'idle' && this.mode === 'operational' && this.autoReturnEnabled && this.currentFloor !== 0) {
         this._scheduleAutoReturn();
       }
-    }, REST_MS);
+    }, config.REST_MS);
   }
 
   _afterInternalTrip({ shabbat }) {
@@ -200,7 +205,7 @@ export class Elevator {
   _shabbatStep() {
     if (this.state !== 'idle') return;
     let next = this.currentFloor + this._shabbatDirection;
-    if (next >= FLOORS) {
+    if (next >= config.FLOORS) {
       this._shabbatDirection = -1;
       next = this.currentFloor + this._shabbatDirection;
     } else if (next < 0) {
@@ -222,7 +227,7 @@ export class Elevator {
       if (this.mode === 'operational' && this.state === 'idle' && this.currentFloor !== 0) {
         this.goTo(0, { silent: true });
       }
-    }, REST_MS);
+    }, config.REST_MS);
   }
 
   _cancelAutoReturnTimer() {

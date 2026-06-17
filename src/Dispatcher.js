@@ -1,5 +1,5 @@
 import { formatTime } from './format.js';
-import { TIME_REFRESH_MS } from './config.js';
+import { config } from './config.js';
 import { pickClosest } from './algorithm.js';
 
 export class Dispatcher {
@@ -9,7 +9,7 @@ export class Dispatcher {
     this.queue = [];
     this.activeCalls = new Map();
     this.ding = this._loadDing();
-    this._tickerId = setInterval(() => this._tick(), TIME_REFRESH_MS);
+    this._tickerId = setInterval(() => this._tick(), config.TIME_REFRESH_MS);
   }
 
   destroy() {
@@ -17,6 +17,11 @@ export class Dispatcher {
       clearInterval(this._tickerId);
       this._tickerId = null;
     }
+  }
+
+  restartTicker() {
+    if (this._tickerId !== null) clearInterval(this._tickerId);
+    this._tickerId = setInterval(() => this._tick(), config.TIME_REFRESH_MS);
   }
 
   setActors(elevators, buttons) {

@@ -9,7 +9,10 @@
   <body>
     <main id="app">
       <h1 class="app-title">Elevator Exercise</h1>
-      <div class="building"></div>
+      <div class="app__main">
+        <div class="building"></div>
+        <div class="app__sidebar"></div>
+      </div>
     </main>
 
     <template id="floor-label-template">
@@ -33,17 +36,31 @@
     <template id="shaft-footer-template">
       <div class="shaft-footer shaft-footer--operational">
         <div class="mode-control" role="radiogroup" aria-label="Elevator mode">
-          <label class="mode-option mode-option--op">
+          <label class="mode-option mode-option--op" aria-label="Operational">
             <input type="radio" value="operational" />
-            <span class="mode-option__label">Op</span>
+            <span class="mode-option__label">
+              <svg class="mode-option__icon" viewBox="0 0 16 16" aria-hidden="true">
+                <polyline points="3,8 6.5,11.5 13,5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
           </label>
-          <label class="mode-option mode-option--shab">
+          <label class="mode-option mode-option--shab" aria-label="Shabbat">
             <input type="radio" value="shabbat" />
-            <span class="mode-option__label">Shab</span>
+            <span class="mode-option__label">
+              <svg class="mode-option__icon" viewBox="0 0 16 16" aria-hidden="true">
+                <polygon points="8,1.5 14.1,12 1.9,12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                <polygon points="8,14.5 1.9,4 14.1,4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+            </span>
           </label>
-          <label class="mode-option mode-option--oos">
+          <label class="mode-option mode-option--oos" aria-label="Out of service">
             <input type="radio" value="oos" />
-            <span class="mode-option__label">OOS</span>
+            <span class="mode-option__label">
+              <svg class="mode-option__icon" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+                <line x1="3.9" y1="3.9" x2="12.1" y2="12.1" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </span>
           </label>
         </div>
         <label class="auto-return">
