@@ -7,11 +7,12 @@ const LABELS = {
 };
 
 export class CallButton {
-  constructor(floor, dispatcher, buttonElement, timeElement) {
+  constructor(floor, dispatcher, buttonElement, timeElement, queueTimeElement) {
     this.floor = floor;
     this.dispatcher = dispatcher;
     this.button = buttonElement;
     this.timeEl = timeElement;
+    this.queueTimeEl = queueTimeElement;
 
     this.state = 'call';
     const floorLabel = floor === 0 ? 'Ground Floor' : `floor ${floor}`;
@@ -34,7 +35,9 @@ export class CallButton {
 
     if (state === 'call') {
       this.setTime('');
+      this.setQueueTime('');
       this.timeEl.style.removeProperty('--shaft-index');
+      this.timeEl.classList.remove('time-cell--assigned');
     }
   }
 
@@ -42,11 +45,19 @@ export class CallButton {
     this.timeEl.textContent = text;
   }
 
+  setQueueTime(text) {
+    if (this.queueTimeEl) this.queueTimeEl.textContent = text;
+  }
+
   setElevatorIndex(index) {
     if (index === null || index === undefined) {
       this.timeEl.style.removeProperty('--shaft-index');
+      this.timeEl.classList.remove('time-cell--assigned');
+      this.setTime('');
     } else {
       this.timeEl.style.setProperty('--shaft-index', String(index));
+      this.timeEl.classList.add('time-cell--assigned');
+      this.setQueueTime('');
     }
   }
 }

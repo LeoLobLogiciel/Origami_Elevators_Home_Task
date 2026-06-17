@@ -33,6 +33,8 @@ export class Dispatcher {
     const idle = this.elevators.filter(e => e.state === 'idle');
     if (idle.length === 0) {
       this.queue.push({ floor, startTime });
+      this.buttons[floor].setElevatorIndex(null);
+      this.buttons[floor].setQueueTime(formatTime(0));
       return;
     }
 
@@ -76,7 +78,7 @@ export class Dispatcher {
       }
     }
     for (const call of this.queue) {
-      this.buttons[call.floor].setTime(formatTime(now - call.startTime));
+      this.buttons[call.floor].setQueueTime(formatTime(now - call.startTime));
     }
   }
 

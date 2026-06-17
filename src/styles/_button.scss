@@ -5,6 +5,15 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 6px;
+}
+
+.call-row__queue-time {
+  font-size: 11px;
+  font-style: italic;
+  color: #777;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .call-button {

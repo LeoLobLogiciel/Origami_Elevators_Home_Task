@@ -66,7 +66,8 @@ export class Building {
       calls.appendChild(callRow);
 
       const buttonEl = callRow.querySelector('.call-button');
-      this.buttons[f] = new CallButton(f, this.dispatcher, buttonEl, timeCell);
+      const queueTimeEl = callRow.querySelector('.call-row__queue-time');
+      this.buttons[f] = new CallButton(f, this.dispatcher, buttonEl, timeCell, queueTimeEl);
     }
 
     this.root.appendChild(labels);
