@@ -2,6 +2,7 @@ import './styles/main.scss';
 import { FLOORS, ELEVATORS } from './config.js';
 import { CallButton } from './CallButton.js';
 import { Elevator } from './Elevator.js';
+import { Dispatcher } from './Dispatcher.js';
 
 function cloneTemplate(id) {
   const tpl = document.getElementById(id);
@@ -28,30 +29,9 @@ const labels = document.createElement('div'); labels.className = 'building__labe
 const shafts = document.createElement('div'); shafts.className = 'building__shafts';
 const calls  = document.createElement('div'); calls.className  = 'building__calls';
 
+const dispatcher = new Dispatcher();
 const elevators = [];
 const buttons = [];
-
-const fakeDispatcher = {
-  _activeFloor: null,
-  _activeElev: null,
-  requestElevator(floor) {
-    const elev = elevators.find(e => e.state === 'idle');
-    if (!elev) { console.log('no idle elevator'); return; }
-    buttons[floor].setState('waiting');
-    this._activeFloor = floor;
-    this._activeElev = elev;
-    elev.goTo(floor);
-  },
-  onArrival(elev, ms) {
-    console.log('arrived elevator', elev.id, 'in', Math.round(ms), 'ms');
-    buttons[this._activeFloor].setState('arrived', `${Math.round(ms / 1000)} sec`);
-    elev.rest();
-  },
-  onIdle(elev) {
-    console.log('idle elevator', elev.id);
-    buttons[this._activeFloor].setState('call');
-  }
-};
 
 for (let f = 0; f < FLOORS; f++) {
   const label = cloneTemplate('floor-label-template');
@@ -61,7 +41,7 @@ for (let f = 0; f < FLOORS; f++) {
   const callRow = cloneTemplate('call-row-template');
   callRow.dataset.floor = String(f);
   calls.appendChild(callRow);
-  buttons[f] = new CallButton(f, fakeDispatcher, callRow);
+  buttons[f] = new CallButton(f, dispatcher, callRow);
 }
 
 for (let i = 0; i < ELEVATORS; i++) {
@@ -69,7 +49,7 @@ for (let i = 0; i < ELEVATORS; i++) {
   shaft.dataset.elevatorId = String(i);
   shaft.querySelector('.shaft__id').textContent = `#${i + 1}`;
   shafts.appendChild(shaft);
-  elevators.push(new Elevator(i, fakeDispatcher));
+  elevators.push(new Elevator(i, dispatcher, {}));
 }
 
 root.appendChild(labels);
@@ -77,3 +57,4 @@ root.appendChild(shafts);
 root.appendChild(calls);
 
 elevators.forEach((e, i) => e.attach(shafts.children[i]));
+dispatcher.setActors(elevators, buttons);
