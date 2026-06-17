@@ -1,0 +1,42 @@
+@use 'variables' as *;
+
+.shaft {
+  position: relative;
+  width: var(--shaft-width);
+  height: calc(var(--floor-height) * 10);
+  border-left: 1px solid $color-grid-line;
+
+  &:last-child { border-right: 1px solid $color-grid-line; }
+}
+
+.shaft__id {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+}
+
+.shaft__elevator {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 40px;
+  height: calc(var(--floor-height) - 8px);
+  margin-left: -20px;
+  transform: translateY(0);
+  transition: transform var(--travel-duration, 0ms) ease-in-out;
+}
+
+.shaft__elevator-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.shaft__elevator--idle    { color: $color-elevator-idle; }
+.shaft__elevator--moving  { color: $color-elevator-moving; }
+.shaft__elevator--arrived { color: $color-elevator-arrived; }
