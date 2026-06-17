@@ -1,8 +1,9 @@
 :root {
   --floor-height: 60px;
-  --shaft-width: 80px;
+  --shaft-width: 96px;
   --label-width: 90px;
   --calls-width: 80px;
+  --footer-height: 60px;
 }
 
 $color-bg: #ebebeb;
@@ -19,5 +20,9 @@ $color-arrived-bg: #ffffff;
 $color-elevator-idle: #2d2d2d;
 $color-elevator-moving: #ef4456;
 $color-elevator-arrived: #36c272;
+
+$color-mode-op: #36c272;
+$color-mode-shabbat: #6c52a3;
+$color-mode-oos: #888888;
 
 $font-stack: 'Helvetica Neue', Arial, sans-serif;

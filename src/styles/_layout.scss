@@ -30,7 +30,7 @@ body {
 
 .building {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -41,6 +41,13 @@ body {
 }
 
 .building__labels { width: var(--label-width); }
+.building__calls  { width: var(--calls-width); }
+
+.building__shafts-area {
+  display: flex;
+  flex-direction: column;
+}
+
 .building__shafts {
   display: flex;
   flex-direction: row;
@@ -48,18 +55,23 @@ body {
   background: #ffffff;
   border: 1px solid $color-grid-line;
 }
-.building__calls  { width: var(--calls-width); }
 
-@media (max-width: 640px) {
+.building__footers {
+  display: flex;
+  flex-direction: row;
+}
+
+@media (max-width: 720px) {
   :root {
-    --floor-height: 36px;
-    --shaft-width: 44px;
+    --floor-height: 40px;
+    --shaft-width: 96px;
     --label-width: 64px;
-    --calls-width: 80px;
+    --calls-width: 76px;
+    --footer-height: 60px;
   }
 
   body { font-size: 12px; }
   .app-title { font-size: 15px; }
-  .building { gap: 8px; }
+  .building { gap: 6px; }
   #app { padding: 16px 8px; gap: 12px; }
 }

@@ -30,9 +30,10 @@ export class Dispatcher {
     const startTime = performance.now();
     this.buttons[floor].setState('waiting');
 
-    const idle = this.elevators.filter(e => e.state === 'idle');
+    const idle = this.elevators.filter(e => e.state === 'idle' && e.acceptsDispatch);
     if (idle.length === 0) {
       this.queue.push({ floor, startTime });
+      this.buttons[floor].setElevatorIndex(null);
       return;
     }
 
@@ -60,7 +61,7 @@ export class Dispatcher {
       this.activeCalls.delete(elevator);
     }
 
-    if (this.queue.length > 0) {
+    if (elevator.acceptsDispatch && this.queue.length > 0) {
       const next = this.queue.shift();
       this.activeCalls.set(elevator, next);
       this.buttons[next.floor].setElevatorIndex(elevator.id);

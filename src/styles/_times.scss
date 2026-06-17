@@ -9,14 +9,29 @@
 }
 
 .time-cell {
-  width: var(--shaft-width);
   height: var(--floor-height);
-  margin-left: calc(var(--shaft-index, 0) * var(--shaft-width));
   display: flex;
   align-items: flex-start;
-  justify-content: center;
   padding-top: 4px;
   font-size: 12px;
   color: #555;
   background: transparent;
+
+  // default (queued, no elevator yet): float to the right edge, italic, dimmer
+  width: auto;
+  margin-left: auto;
+  padding-right: 8px;
+  justify-content: flex-end;
+  font-style: italic;
+  opacity: 0.7;
+
+  &--assigned {
+    width: var(--shaft-width);
+    margin-left: calc(var(--shaft-index, 0) * var(--shaft-width));
+    margin-right: 0;
+    padding-right: 0;
+    justify-content: center;
+    font-style: normal;
+    opacity: 1;
+  }
 }

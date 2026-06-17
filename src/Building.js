@@ -36,15 +36,27 @@ export class Building {
 
   _buildDom() {
     const labels = document.createElement('div'); labels.className = 'building__labels';
+    const shaftsArea = document.createElement('div'); shaftsArea.className = 'building__shafts-area';
     const shafts = document.createElement('div'); shafts.className = 'building__shafts';
-    const calls  = document.createElement('div'); calls.className  = 'building__calls';
+    const footers = document.createElement('div'); footers.className = 'building__footers';
+    const calls = document.createElement('div'); calls.className = 'building__calls';
+
+    shaftsArea.appendChild(shafts);
+    shaftsArea.appendChild(footers);
 
     const shaftElements = [];
+    const footerElements = [];
     for (let i = 0; i < ELEVATORS; i++) {
       const shaft = cloneTemplate('shaft-template');
       shaft.dataset.elevatorId = String(i);
       shafts.appendChild(shaft);
       shaftElements.push(shaft);
+
+      const footer = cloneTemplate('shaft-footer-template');
+      footer.dataset.elevatorId = String(i);
+      footers.appendChild(footer);
+      footerElements.push(footer);
+
       this.elevators.push(new Elevator(i, this.dispatcher));
     }
 
@@ -70,9 +82,9 @@ export class Building {
     }
 
     this.root.appendChild(labels);
-    this.root.appendChild(shafts);
+    this.root.appendChild(shaftsArea);
     this.root.appendChild(calls);
 
-    this.elevators.forEach((e, i) => e.attach(shaftElements[i]));
+    this.elevators.forEach((e, i) => e.attach(shaftElements[i], footerElements[i]));
   }
 }

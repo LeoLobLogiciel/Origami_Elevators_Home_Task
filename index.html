@@ -30,6 +30,29 @@
       <div class="time-cell" aria-live="polite"></div>
     </template>
 
+    <template id="shaft-footer-template">
+      <div class="shaft-footer shaft-footer--operational">
+        <div class="mode-control" role="radiogroup" aria-label="Elevator mode">
+          <label class="mode-option mode-option--op">
+            <input type="radio" value="operational" />
+            <span class="mode-option__label">Op</span>
+          </label>
+          <label class="mode-option mode-option--shab">
+            <input type="radio" value="shabbat" />
+            <span class="mode-option__label">Shab</span>
+          </label>
+          <label class="mode-option mode-option--oos">
+            <input type="radio" value="oos" />
+            <span class="mode-option__label">OOS</span>
+          </label>
+        </div>
+        <label class="auto-return">
+          <input type="checkbox" class="auto-return__check" />
+          <span class="auto-return__text">Auto-home</span>
+        </label>
+      </div>
+    </template>
+
     <template id="call-row-template">
       <div class="call-row">
         <button type="button" class="call-button call-button--call">Call</button>

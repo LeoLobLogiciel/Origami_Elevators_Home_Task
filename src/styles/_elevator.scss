@@ -35,3 +35,37 @@
 .shaft__elevator--idle    { color: $color-elevator-idle; }
 .shaft__elevator--moving  { color: $color-elevator-moving; }
 .shaft__elevator--arrived { color: $color-elevator-arrived; }
+
+.shaft--shabbat .shaft__elevator { color: $color-mode-shabbat; }
+.shaft--shabbat::before {
+  content: 'Shabbat';
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: $color-mode-shabbat;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.shaft--oos .shaft__elevator { color: $color-mode-oos; opacity: 0.6; }
+.shaft--oos::before {
+  content: 'Out of service';
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: $color-mode-oos;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 1;
+}

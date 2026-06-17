@@ -35,6 +35,7 @@ export class CallButton {
     if (state === 'call') {
       this.setTime('');
       this.timeEl.style.removeProperty('--shaft-index');
+      this.timeEl.classList.remove('time-cell--assigned');
     }
   }
 
@@ -45,8 +46,10 @@ export class CallButton {
   setElevatorIndex(index) {
     if (index === null || index === undefined) {
       this.timeEl.style.removeProperty('--shaft-index');
+      this.timeEl.classList.remove('time-cell--assigned');
     } else {
       this.timeEl.style.setProperty('--shaft-index', String(index));
+      this.timeEl.classList.add('time-cell--assigned');
     }
   }
 }
