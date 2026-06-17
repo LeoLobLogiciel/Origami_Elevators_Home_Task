@@ -56,17 +56,18 @@ export class ControlPanel {
   _renderRow(key) {
     const { min, max, step } = BOUNDS[key];
     return `
-      <label class="control-row">
+      <label class="control-row control-row--slider">
         <span class="control-row__label">${LABELS[key]}</span>
         <input
-          type="number"
-          class="control-row__input"
+          type="range"
+          class="control-row__slider"
           data-key="${key}"
           min="${min}"
           max="${max}"
           step="${step}"
           value="${config[key]}"
         />
+        <output class="control-row__value" data-output-for="${key}">${config[key]}</output>
       </label>`;
   }
 
@@ -75,14 +76,16 @@ export class ControlPanel {
       this._inputs[key].addEventListener('input', () => {
         this._dirtyStructure = true;
         this.applyBtn.disabled = false;
+        this._updateOutput(key);
       });
     });
 
     LIVE_KEYS.forEach(key => {
-      this._inputs[key].addEventListener('change', () => {
+      this._inputs[key].addEventListener('input', () => {
         const v = parseInt(this._inputs[key].value, 10);
         if (!this._validate(key, v)) return;
         config[key] = v;
+        this._updateOutput(key);
       });
     });
 
@@ -103,11 +106,17 @@ export class ControlPanel {
       resetConfig();
       Object.entries(this._inputs).forEach(([key, input]) => {
         input.value = String(DEFAULTS[key]);
+        this._updateOutput(key);
       });
       this.building.rebuild();
       this._dirtyStructure = false;
       this.applyBtn.disabled = true;
     });
+  }
+
+  _updateOutput(key) {
+    const output = this.panel.querySelector(`[data-output-for="${key}"]`);
+    if (output) output.textContent = this._inputs[key].value;
   }
 
   _validate(key, value) {

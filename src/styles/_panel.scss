@@ -62,6 +62,31 @@
   text-align: right;
 }
 
+.control-row--slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+
+  .control-row__label {
+    grid-column: 1;
+  }
+  .control-row__value {
+    grid-column: 2;
+    min-width: 24px;
+    text-align: right;
+    font-weight: 600;
+    font-size: 11px;
+    color: #333;
+  }
+  .control-row__slider {
+    grid-column: 1 / -1;
+    width: 100%;
+    accent-color: $color-mode-op;
+    cursor: pointer;
+  }
+}
+
 .control-panel__apply,
 .control-panel__reset {
   font-size: 11px;
